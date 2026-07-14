@@ -17,6 +17,7 @@ SACRED_FILES: tuple[str, ...] = (
     "CURRENT_FOCUS.md",
     "SESSION_LOG.md",
     "DECISIONS.md",
+    "COMPLETED.md",
     "docs/LOOM_CORE_MASTER_SPEC.md",
 )
 
