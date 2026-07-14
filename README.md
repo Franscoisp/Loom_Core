@@ -1,7 +1,6 @@
 # Loom Core
 
-<!-- Replace OWNER/REPO once the GitHub remote is set -->
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/Franscoisp/Loom_Core/actions/workflows/ci.yml/badge.svg)](https://github.com/Franscoisp/Loom_Core/actions/workflows/ci.yml)
 
 A local-first, **memory-centric** runtime.
 
