@@ -49,6 +49,15 @@ def version() -> None:
     typer.echo(__version__)
 
 
+def _load_json(payload_file: Path) -> dict[str, object]:
+    """Read a JSON payload file, tolerating a UTF-8 BOM (e.g. from PowerShell)."""
+    text = Path(payload_file).read_text(encoding="utf-8-sig")
+    data = json.loads(text)
+    if not isinstance(data, dict):
+        raise typer.BadParameter("payload JSON must be an object")
+    return data
+
+
 def _fmt(loaded: LoadedEntry) -> str:
     e = loaded.entry
     return (
@@ -216,7 +225,7 @@ def distill(
     data_dir: DataDirOpt = None,
 ) -> None:
     """Run the Distillation Loop on a JSON session payload (spec §4.2)."""
-    payload = json.loads(Path(payload_file).read_text(encoding="utf-8"))
+    payload = _load_json(payload_file)
     store = MemoryStore(data_dir)
     orch = Orchestrator(store)
     orch.register(DistillationLoop(store))
@@ -266,7 +275,7 @@ def meta_run(
     data_dir: DataDirOpt = None,
 ) -> None:
     """Run an arbitrary meta action (propose/evaluate) from a JSON payload."""
-    payload = json.loads(Path(payload_file).read_text(encoding="utf-8"))
+    payload = _load_json(payload_file)
     _run_meta(payload, data_dir)
 
 
@@ -298,7 +307,7 @@ def tools_run(
     store = MemoryStore(data_dir)
     executor = build_default_executor(store)
     payload = (
-        json.loads(Path(payload_file).read_text(encoding="utf-8"))
+        _load_json(payload_file)
         if payload_file
         else {}
     )
@@ -339,7 +348,7 @@ def support(
     data_dir: DataDirOpt = None,
 ) -> None:
     """Run the Coding Support Loop from a JSON payload (spec §4.3)."""
-    payload = json.loads(Path(payload_file).read_text(encoding="utf-8"))
+    payload = _load_json(payload_file)
     store = MemoryStore(data_dir)
     orch = Orchestrator(store)
     orch.register(CodingSupportLoop(store, context_provider=orch))
