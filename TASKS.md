@@ -51,10 +51,23 @@ This file overrides chat history.
 
 ---
 
+## Phase 3 – Metrics, Persistence & Continuity
+
+| ID       | Status | Description |
+|----------|--------|-------------|
+| TASK-030 | DONE   | Value metrics derived from real data + persistent counters (§8) |
+| TASK-031 | DONE   | Persistent ownership registry + stale-heartbeat reclamation (§7) |
+| TASK-032 | DONE   | Orchestrator metric wiring (conflicts, distillation_runs, tokens_saved, recovery) |
+| TASK-033 | DONE   | Continuity guard: sacred-file check + stub recovery (§7) |
+| TASK-034 | DONE   | CLI `loom metrics`, `loom doctor [--fix]`, `loom session-start` |
+| TASK-035 | DONE   | Tests for metrics / ownership / continuity |
+
+---
+
 ## Backlog / Later Phases
 
-- Value metrics derivation (spec §8)
-- Loop-driven continuity-file enforcement (spec §6 step 8, §7)
-- Persist ownership + heartbeats across processes (currently in-memory, DEC-004)
+- Dedicated CLI surface for the Coding Support Loop (§4.3)
+- Executable implementations behind candidate tools (§4.4.6)
 - Vector index for retrieval (spec §11) — open question
-- Actual executable tool implementations behind registry candidates (§4.4.6)
+- Loop-driven auto-write of continuity records on every dispatch (§6 step 8)
+- Multi-writer / multi-process coordination (locking)

@@ -54,14 +54,13 @@ Template:
 
 ## DEC-004: Ownership + heartbeats are in-memory for now
 - **Date:** 2026-07-14
-- **Status:** accepted
+- **Status:** superseded by DEC-006
 - **Context:** Spec §6 makes the Orchestrator the sole arbiter of task
   ownership. A durable registry is not yet required for a single-process MVP.
 - **Decision:** Track ownership and heartbeats in-memory inside the
   Orchestrator. Loops request ownership via the `OwnershipBroker` protocol.
-- **Consequences:** Ownership does not survive process restarts and is not yet
-  multi-process safe. Persisting it (and stale-heartbeat reclamation) is
-  backlog. See spec §7 (partial crashes).
+- **Consequences:** Ownership did not survive process restarts. Superseded once
+  Phase 3 added persistence.
 
 ## DEC-005: Context ranking weights (initial, tunable)
 - **Date:** 2026-07-14
@@ -74,6 +73,20 @@ Template:
   Token estimate ≈ len/4; budget filled greedily by descending score.
 - **Consequences:** Simple, deterministic, testable. Weights are expected to be
   tuned once real usage data exists; this remains an open question in §11.
+
+## DEC-006: Persist ownership + metrics as JSON under data/
+- **Date:** 2026-07-14
+- **Status:** accepted (supersedes DEC-004)
+- **Context:** Spec §7 requires surviving partial crashes/restarts; §8 requires
+  value metrics derived from real recorded data.
+- **Decision:** `OwnershipRegistry` persists `data/ownership.json` (per-task
+  owner + heartbeat) with atomic writes and reclaims a task once the owner's
+  heartbeat exceeds a TTL (default 3600s). `MetricsStore` persists cumulative
+  event counters in `data/metrics.json`; the rest of the §8 metrics are computed
+  from memory on demand by `compute_metrics`.
+- **Consequences:** Ownership and counters survive restarts. Both JSON files are
+  git-ignored like the rest of `data/`. Still single-node (no locking); multi
+  writer coordination remains future work.
 
 ---
 

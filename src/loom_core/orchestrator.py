@@ -3,42 +3,38 @@
 The Orchestrator is the *only* component allowed to grant and revoke task
 ownership and to assemble the final context packs sent to models. Loops are
 registered with it and request ownership through the OwnershipBroker protocol.
+
+Ownership is persisted (spec §7) and value metrics (spec §8) are updated as a
+side effect of dispatch: distillation runs, tokens saved, ownership conflicts.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
-
 from loom_core.context import ContextPack, ContextPacker
 from loom_core.loops.base import Loop, LoopResult, Task
+from loom_core.metrics import MetricsStore
+from loom_core.ownership import DEFAULT_TTL_SECONDS, OwnershipError, OwnershipRegistry
 from loom_core.store import MemoryStore
 
-
-def _utcnow() -> datetime:
-    return datetime.now(UTC)
-
-
-class OwnershipError(RuntimeError):
-    """Raised on an illegal ownership transition."""
-
-
-@dataclass
-class _Ownership:
-    task_id: str
-    loop_name: str
-    since: datetime = field(default_factory=_utcnow)
+__all__ = ["Orchestrator", "OwnershipError"]
 
 
 class Orchestrator:
     """Coordinates loops, ownership, and context assembly (spec §6)."""
 
-    def __init__(self, store: MemoryStore | None = None) -> None:
+    def __init__(
+        self,
+        store: MemoryStore | None = None,
+        *,
+        ownership_ttl_seconds: int = DEFAULT_TTL_SECONDS,
+    ) -> None:
         self.store = store or MemoryStore()
         self.packer = ContextPacker(self.store)
+        self.metrics = MetricsStore(self.store.data_dir)
+        self._ownership = OwnershipRegistry(
+            self.store.data_dir, ttl_seconds=ownership_ttl_seconds
+        )
         self._loops: list[Loop] = []
-        self._ownership: dict[str, _Ownership] = {}
-        self._heartbeats: dict[str, datetime] = {}
 
     # --- loop registration --------------------------------------------------
 
@@ -54,29 +50,30 @@ class Orchestrator:
     # --- OwnershipBroker (spec §6: only the Orchestrator grants/revokes) -----
 
     def grant(self, task_id: str, loop_name: str) -> bool:
-        current = self._ownership.get(task_id)
-        if current is None:
-            self._ownership[task_id] = _Ownership(task_id, loop_name)
-            return True
-        return current.loop_name == loop_name
+        granted = self._ownership.grant(task_id, loop_name)
+        if not granted:
+            self.metrics.increment("ownership_conflicts")
+        return granted
 
     def revoke(self, task_id: str, loop_name: str) -> None:
-        current = self._ownership.get(task_id)
-        if current is None:
-            return
-        if current.loop_name != loop_name:
-            raise OwnershipError(
-                f"{loop_name} cannot release task {task_id} owned by "
-                f"{current.loop_name}"
-            )
-        del self._ownership[task_id]
+        self._ownership.revoke(task_id, loop_name)
 
     def heartbeat(self, loop_name: str) -> None:
-        self._heartbeats[loop_name] = _utcnow()
+        self._ownership.heartbeat(loop_name)
 
     def owner_of(self, task_id: str) -> str | None:
-        current = self._ownership.get(task_id)
-        return current.loop_name if current else None
+        return self._ownership.owner_of(task_id)
+
+    # --- value metrics (spec §8) --------------------------------------------
+
+    def record_recovery(self) -> None:
+        """Record that a session started by loading from memory (spec §8)."""
+        self.metrics.increment("recovery_events")
+
+    def metrics_snapshot(self) -> dict[str, object]:
+        from loom_core.metrics import compute_metrics
+
+        return compute_metrics(self.store, self.metrics.load())
 
     # --- context packing (spec §3.5) ----------------------------------------
 
@@ -116,4 +113,12 @@ class Orchestrator:
             result = loop.run(task)
         finally:
             loop.release(task.id)
+        self._update_metrics(loop, result)
         return result
+
+    def _update_metrics(self, loop: Loop, result: LoopResult) -> None:
+        if loop.name == "distillation" and result.status != "failure":
+            self.metrics.increment("distillation_runs")
+        saved = result.metrics.get("tokens_saved_estimate")
+        if isinstance(saved, int) and saved > 0:
+            self.metrics.increment("tokens_saved_cumulative", by=saved)

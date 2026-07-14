@@ -9,6 +9,49 @@ Session ID format: `YYYY-MM-DD-NN`.
 
 ---
 
+## Session 2026-07-14-05 — Phase 3: Metrics, persistence, continuity
+
+- **Session ID:** 2026-07-14-05
+- **Date:** 2026-07-14
+- **Focus:** Value metrics (§8), persistent ownership (§7), continuity guard (§7).
+
+### What happened
+- `metrics.py` (TASK-030): `compute_metrics` derives the §8 metrics from memory
+  (decisions preserved, skills created/promoted/improved, average success rate)
+  and merges persistent cumulative counters (`MetricsStore` → `data/metrics.json`:
+  distillation_runs, recovery_events, ownership_conflicts, tokens_saved).
+- `ownership.py` (TASK-031): `OwnershipRegistry` persists `data/ownership.json`
+  with atomic writes; reclaims a task once the owner's heartbeat exceeds a TTL
+  (default 3600s) — handles partial crashes (§7). Supersedes DEC-004 via DEC-006.
+- `orchestrator.py` (TASK-032): now uses the persistent registry and updates
+  metrics as a side effect of dispatch (ownership_conflicts on denied grants,
+  distillation_runs, tokens_saved_cumulative), plus `record_recovery` and
+  `metrics_snapshot`.
+- `continuity.py` (TASK-033): `ContinuityGuard` checks the sacred files exist and
+  can recreate missing ones from a clearly-marked stub (§7).
+- `cli.py` (TASK-034): `loom metrics`, `loom doctor [--fix]`, `loom session-start`.
+- `tests/`: +11 tests (metrics, ownership, continuity); 57 total (TASK-035).
+- Verified via CLI: doctor OK, session-start recorded a recovery event, metrics
+  reflected real data.
+
+### Decisions
+- DEC-006 (persist ownership + metrics as JSON under data/); DEC-004 superseded.
+
+### Outcome
+- **Status:** success — Phase 3 COMPLETE (TASK-030 → TASK-035).
+- Quality gates: pytest 57 passed, ruff clean, mypy --strict clean.
+
+### Lessons / notes
+- Metrics split cleanly into memory-derived (recomputed) vs event counters
+  (persisted), matching the §8 requirement to derive from real data.
+- Heartbeat TTL reclamation keeps ownership honest without a background process.
+
+### Next session
+- Backlog only: executable tools behind candidates (§4.4.6), retrieval upgrade
+  (§11), loop-driven continuity auto-writes (§6 step 8).
+
+---
+
 ## Session 2026-07-14-04 — Phase 2: Coding Support + Meta loops (complete)
 
 - **Session ID:** 2026-07-14-04

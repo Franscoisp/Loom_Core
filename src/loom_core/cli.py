@@ -13,9 +13,11 @@ import frontmatter
 import typer
 
 from loom_core import __version__
+from loom_core.continuity import ContinuityGuard
 from loom_core.loops.base import Task
 from loom_core.loops.distillation import DistillationLoop
 from loom_core.loops.meta import MetaLoop
+from loom_core.metrics import MetricsStore, compute_metrics
 from loom_core.models import parse_entry
 from loom_core.orchestrator import Orchestrator
 from loom_core.registry import ToolRegistry
@@ -273,6 +275,54 @@ def tools_list(data_dir: DataDirOpt = None) -> None:
         typer.echo(
             f"{rec.id}  v{rec.version}  [{rec.status}]  skill={rec.skill_id or '-'}"
         )
+
+
+@app.command()
+def metrics(data_dir: DataDirOpt = None) -> None:
+    """Show value metrics derived from recorded data (spec §8)."""
+    store = MemoryStore(data_dir)
+    snapshot = compute_metrics(store, MetricsStore(store.data_dir).load())
+    width = max(len(k) for k in snapshot)
+    for key, value in snapshot.items():
+        typer.echo(f"{key.ljust(width)} : {value}")
+
+
+@app.command()
+def doctor(
+    fix: Annotated[bool, typer.Option(help="Recreate missing files from a stub.")] = False,
+    root: Annotated[Path | None, typer.Option(help="Project root to check.")] = None,
+) -> None:
+    """Check the sacred continuity files exist (spec §7)."""
+    guard = ContinuityGuard(root or Path.cwd())
+    if fix:
+        report = guard.recreate_missing()
+        if report.recreated:
+            typer.echo(f"recreated: {', '.join(report.recreated)}")
+        else:
+            typer.echo("all continuity files present")
+        return
+    missing = guard.check()
+    if not missing:
+        typer.echo("OK: all continuity files present")
+        return
+    typer.echo(f"MISSING: {', '.join(missing)}", err=True)
+    raise typer.Exit(code=1)
+
+
+@app.command("session-start")
+def session_start(data_dir: DataDirOpt = None) -> None:
+    """Begin a session: verify continuity and record recovery if memory exists."""
+    guard = ContinuityGuard(Path.cwd())
+    missing = guard.check()
+    if missing:
+        typer.echo(f"WARNING missing continuity files: {', '.join(missing)}", err=True)
+    store = MemoryStore(data_dir)
+    orch = Orchestrator(store)
+    if store.iter_files():
+        orch.record_recovery()
+        typer.echo("recovery event recorded (memory contains prior entries)")
+    else:
+        typer.echo("fresh start (no prior memory entries)")
 
 
 if __name__ == "__main__":

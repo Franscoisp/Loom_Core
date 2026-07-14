@@ -11,7 +11,7 @@ This file overrides chat history. Update after every meaningful change.
 **Phase 0 – Foundation** ✅ COMPLETE
 **Phase 1 – Memory MVP** ✅ COMPLETE
 **Phase 2 – Loops & Orchestrator** ✅ COMPLETE
-**Phase 3 – Value metrics, continuity enforcement, persistence** ⏳ NOT STARTED (next)
+**Phase 3 – Metrics, persistence, continuity** ✅ COMPLETE
 
 ---
 
@@ -53,6 +53,16 @@ This file overrides chat history. Update after every meaningful change.
 
 **Quality gates (Phase 2):** pytest (46 passed), ruff (clean), mypy --strict (clean).
 
+### Phase 3 – Metrics, persistence, continuity (2026-07-14)
+- [x] TASK-030: `metrics.py` — value metrics derived from real data + persistent counters (§8)
+- [x] TASK-031: `ownership.py` — persistent ownership + stale-heartbeat reclamation (§7, DEC-006)
+- [x] TASK-032: Orchestrator metric wiring (ownership_conflicts, distillation_runs, tokens_saved, recovery)
+- [x] TASK-033: `continuity.py` — sacred-file guard + stub recovery (§7)
+- [x] TASK-034: CLI `loom metrics`, `loom doctor [--fix]`, `loom session-start`
+- [x] TASK-035: 11 new tests (metrics, ownership, continuity)
+
+**Quality gates (Phase 3):** pytest (57 passed), ruff (clean), mypy --strict (clean).
+
 ---
 
 ## In Progress
@@ -63,8 +73,10 @@ _None._
 
 ## Next Up
 
-- Phase 3: value metrics derivation (§8), loop-driven continuity-file
-  enforcement (§6 step 8, §7), and persisting ownership/heartbeats (DEC-004).
+- Coding Support Loop CLI surface (currently library + tested; no dedicated CLI).
+- Executable implementations behind candidate tools (§4.4.6).
+- Vector index / retrieval upgrade (§11 open question).
+- Desktop app information architecture (§11 open question).
 
 ---
 
