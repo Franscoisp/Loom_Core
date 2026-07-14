@@ -40,10 +40,19 @@ Read in this order at the start of every session:
 ## Development
 
 ```
+# one-time setup
+python -m venv .venv
+.venv\Scripts\Activate.ps1   # Windows PowerShell
+# source .venv/bin/activate   # Unix
 pip install -e ".[dev]"
+loom version                  # -> 0.0.1
+
+# every change: run the gates locally
 pytest
 ruff check .
-mypy
+python -m mypy
+
+# the gates also run in CI on every push to main
 ```
 
 ## Multiple projects
