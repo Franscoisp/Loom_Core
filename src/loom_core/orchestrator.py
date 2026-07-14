@@ -10,6 +10,9 @@ side effect of dispatch: distillation runs, tokens saved, ownership conflicts.
 
 from __future__ import annotations
 
+import json
+from datetime import UTC, datetime
+
 from loom_core.context import ContextPack, ContextPacker
 from loom_core.loops.base import Loop, LoopResult, Task
 from loom_core.metrics import MetricsStore
@@ -17,6 +20,8 @@ from loom_core.ownership import DEFAULT_TTL_SECONDS, OwnershipError, OwnershipRe
 from loom_core.store import MemoryStore
 
 __all__ = ["Orchestrator", "OwnershipError"]
+
+DISPATCH_LOG_FILENAME = "dispatch_log.jsonl"
 
 
 class Orchestrator:
@@ -35,6 +40,7 @@ class Orchestrator:
             self.store.data_dir, ttl_seconds=ownership_ttl_seconds
         )
         self._loops: list[Loop] = []
+        self._dispatch_log = self.store.data_dir / DISPATCH_LOG_FILENAME
 
     # --- loop registration --------------------------------------------------
 
@@ -114,6 +120,7 @@ class Orchestrator:
         finally:
             loop.release(task.id)
         self._update_metrics(loop, result)
+        self._log_dispatch(loop, task, result)
         return result
 
     def _update_metrics(self, loop: Loop, result: LoopResult) -> None:
@@ -122,3 +129,33 @@ class Orchestrator:
         saved = result.metrics.get("tokens_saved_estimate")
         if isinstance(saved, int) and saved > 0:
             self.metrics.increment("tokens_saved_cumulative", by=saved)
+
+    def _log_dispatch(self, loop: Loop, task: Task, result: LoopResult) -> None:
+        """Append an audit record of every dispatch (spec §6 step 8, §7).
+
+        Enforces visibility: whether a loop wrote memory/continuity records is
+        captured so gaps are auditable rather than silent.
+        """
+        record = {
+            "ts": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "loop": loop.name,
+            "task_id": task.id,
+            "task_kind": task.kind,
+            "status": result.status,
+            "memory_entries_written": result.memory_entries_written,
+            "wrote_memory": bool(result.memory_entries_written),
+        }
+        self._dispatch_log.parent.mkdir(parents=True, exist_ok=True)
+        with open(self._dispatch_log, "a", encoding="utf-8", newline="\n") as fh:
+            fh.write(json.dumps(record, sort_keys=True) + "\n")
+
+    def dispatch_log(self) -> list[dict[str, object]]:
+        """Return the parsed dispatch audit log (newest last)."""
+        if not self._dispatch_log.exists():
+            return []
+        out: list[dict[str, object]] = []
+        for line in self._dispatch_log.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                out.append(json.loads(line))
+        return out

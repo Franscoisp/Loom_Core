@@ -12,6 +12,10 @@ This file overrides chat history. Update after every meaningful change.
 **Phase 1 – Memory MVP** ✅ COMPLETE
 **Phase 2 – Loops & Orchestrator** ✅ COMPLETE
 **Phase 3 – Metrics, persistence, continuity** ✅ COMPLETE
+**Phase 4 – Executable tools & enforcement** ✅ COMPLETE
+
+All spec sections §2–§10 are implemented and tested. Remaining items are §11
+open questions, explicitly deferred in DEC-007.
 
 ---
 
@@ -63,6 +67,15 @@ This file overrides chat history. Update after every meaningful change.
 
 **Quality gates (Phase 3):** pytest (57 passed), ruff (clean), mypy --strict (clean).
 
+### Phase 4 – Executable tools & enforcement (2026-07-14)
+- [x] TASK-040: `tooling.py` — executable tool framework, built-in tools, candidate gating (§4.4.6)
+- [x] TASK-041: CLI `loom support` for the Coding Support Loop (§4.3)
+- [x] TASK-042: Orchestrator dispatch audit log `data/dispatch_log.jsonl` (§6 step 8)
+- [x] TASK-043: CLI `loom tools run`, `loom tools promote`
+- [x] TASK-044: 10 new tests (tooling, dispatch log)
+
+**Quality gates (Phase 4):** pytest (67 passed), ruff (clean), mypy --strict (clean).
+
 ---
 
 ## In Progress
@@ -73,10 +86,9 @@ _None._
 
 ## Next Up
 
-- Coding Support Loop CLI surface (currently library + tested; no dedicated CLI).
-- Executable implementations behind candidate tools (§4.4.6).
-- Vector index / retrieval upgrade (§11 open question).
-- Desktop app information architecture (§11 open question).
+- Nothing required by the spec. All remaining work is §11 open questions,
+  deferred in DEC-007 (vector index, auto-promotion policy, multi-project
+  isolation, desktop app IA, multi-writer locking). Revisit on real demand.
 
 ---
 

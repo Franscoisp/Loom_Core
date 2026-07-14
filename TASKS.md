@@ -64,10 +64,22 @@ This file overrides chat history.
 
 ---
 
-## Backlog / Later Phases
+## Phase 4 – Executable Tools & Enforcement
 
-- Dedicated CLI surface for the Coding Support Loop (§4.3)
-- Executable implementations behind candidate tools (§4.4.6)
-- Vector index for retrieval (spec §11) — open question
-- Loop-driven auto-write of continuity records on every dispatch (§6 step 8)
+| ID       | Status | Description |
+|----------|--------|-------------|
+| TASK-040 | DONE   | Executable tool framework + built-in tools + candidate gating (§4.4.6) |
+| TASK-041 | DONE   | Coding Support CLI (`loom support`) |
+| TASK-042 | DONE   | Dispatch audit log in Orchestrator (§6 step 8) |
+| TASK-043 | DONE   | CLI `loom tools run`, `loom tools promote` |
+| TASK-044 | DONE   | Tests for tooling + dispatch log |
+
+---
+
+## Backlog / Later Phases (all §11 open questions — deferred, see DEC-007)
+
+- Vector index for retrieval (keyword search sufficient at current scale)
+- Automatic/unattended tool promotion policy
+- Multi-project isolation strategy
+- Desktop app information architecture
 - Multi-writer / multi-process coordination (locking)

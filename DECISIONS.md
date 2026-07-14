@@ -88,12 +88,31 @@ Template:
   git-ignored like the rest of `data/`. Still single-node (no locking); multi
   writer coordination remains future work.
 
+## DEC-007: Tool execution gating + deferral of §11 open questions
+- **Date:** 2026-07-14
+- **Status:** accepted
+- **Context:** Spec §4.4.6 warns tool creation is powerful/dangerous; §11 lists
+  open questions intentionally left for later.
+- **Decision:**
+  - Executable tools (`tooling.ToolExecutor`) run only when `promoted`, or when
+    a caller explicitly passes `allow_candidate` / `--allow-candidate`. Every run
+    records an outcome entry and updates the tool's stats. Promotion is a manual
+    action (`loom tools promote`) or a Meta evaluation with evidence.
+  - Automatic (unattended) tool promotion stays **disabled** for now — the "how
+    aggressive" question (§11) is deferred; humans/Meta-with-evidence promote.
+  - **Deferred (not implemented this cycle):** vector index (keyword search is
+    sufficient at current scale), multi-project isolation (single project per
+    data dir for now), desktop app information architecture, and multi-writer
+    locking. Revisit when there is real demand/scale.
+- **Consequences:** Safe-by-default tool execution. The deferred items remain
+  open questions in §11; no code assumes them.
+
 ---
 
 ## Open Questions (from spec §11 — unresolved)
 
 - Exact ranking algorithm weights for context packing (initial values in DEC-005)
-- Whether to introduce a vector index in Phase 2 or 3
-- How aggressive automatic tool promotion should be
-- Multi-project isolation strategy
-- Desktop app information architecture
+- Whether to introduce a vector index in Phase 2 or 3 (deferred — DEC-007)
+- How aggressive automatic tool promotion should be (deferred — DEC-007)
+- Multi-project isolation strategy (deferred — DEC-007)
+- Desktop app information architecture (deferred — DEC-007)

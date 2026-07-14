@@ -9,6 +9,52 @@ Session ID format: `YYYY-MM-DD-NN`.
 
 ---
 
+## Session 2026-07-14-06 — Phase 4: Executable tools & enforcement
+
+- **Session ID:** 2026-07-14-06
+- **Date:** 2026-07-14
+- **Focus:** Executable tools (§4.4.6), Coding Support CLI, dispatch audit log,
+  and recording §11 deferrals. Closes out all spec-required work.
+
+### What happened
+- `tooling.py` (TASK-040): `ToolExecutor` binds Python callables to registered
+  tools, gates execution by lifecycle status (candidate tools require
+  `allow_candidate`; only `promoted` run freely — spec §4.4.6), records an
+  outcome entry and updates tool stats on every run. Built-ins:
+  `frontmatter-linter`, `memory-summary`.
+- `cli.py` (TASK-041, TASK-043): `loom support` (Coding Support Loop),
+  `loom tools run`, `loom tools promote`.
+- `orchestrator.py` (TASK-042): appends every dispatch to
+  `data/dispatch_log.jsonl` (loop, task, status, whether memory was written) so
+  gaps are auditable rather than silent (spec §6 step 8, §7).
+- `tests/`: +10 tests (tooling, dispatch log); 67 total (TASK-044).
+- Verified via CLI: candidate tool blocked → allowed with flag → promoted →
+  runs freely.
+
+### Decisions
+- DEC-007: safe-by-default tool execution gating; explicitly **deferred** the
+  §11 open questions (vector index, auto-promotion aggressiveness, multi-project
+  isolation, desktop app IA, multi-writer locking).
+
+### Outcome
+- **Status:** success — Phase 4 COMPLETE. All binding spec sections (§2–§10)
+  implemented and tested.
+- Quality gates: pytest 67 passed, ruff clean, mypy --strict clean.
+
+### Lessons / notes
+- Gating tool execution at the executor (not just the registry) keeps the
+  dangerous capability (spec §4.4.6) behind an explicit switch.
+- The dispatch log gives cheap, durable auditability without a background loop.
+
+### Project state
+- Loom Core is feature-complete against the Expanded Master Specification v2.0.
+  Remaining work is §11 open questions only (deferred, DEC-007).
+
+### Next session
+- None required. Revisit §11 items on real demand.
+
+---
+
 ## Session 2026-07-14-05 — Phase 3: Metrics, persistence, continuity
 
 - **Session ID:** 2026-07-14-05

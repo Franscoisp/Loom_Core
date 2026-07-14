@@ -15,6 +15,7 @@ import typer
 from loom_core import __version__
 from loom_core.continuity import ContinuityGuard
 from loom_core.loops.base import Task
+from loom_core.loops.coding_support import CodingSupportLoop
 from loom_core.loops.distillation import DistillationLoop
 from loom_core.loops.meta import MetaLoop
 from loom_core.metrics import MetricsStore, compute_metrics
@@ -22,11 +23,16 @@ from loom_core.models import parse_entry
 from loom_core.orchestrator import Orchestrator
 from loom_core.registry import ToolRegistry
 from loom_core.store import LoadedEntry, MemoryStore
+from loom_core.tooling import (
+    ToolNotAllowedError,
+    ToolNotFoundError,
+    build_default_executor,
+)
 
 app = typer.Typer(help="Loom Core - local-first, memory-centric runtime.")
 memory_app = typer.Typer(help="Inspect and manage Loom memory entries.")
 meta_app = typer.Typer(help="Self-improvement: detect, propose, evaluate.")
-tools_app = typer.Typer(help="Inspect the tool registry.")
+tools_app = typer.Typer(help="Inspect and run tools.")
 app.add_typer(memory_app, name="memory")
 app.add_typer(meta_app, name="meta")
 app.add_typer(tools_app, name="tools")
@@ -275,6 +281,78 @@ def tools_list(data_dir: DataDirOpt = None) -> None:
         typer.echo(
             f"{rec.id}  v{rec.version}  [{rec.status}]  skill={rec.skill_id or '-'}"
         )
+
+
+@tools_app.command("run")
+def tools_run(
+    tool_id: Annotated[str, typer.Argument(help="Tool id to run.")],
+    payload_file: Annotated[
+        Path | None, typer.Option("--payload", help="JSON payload file.")
+    ] = None,
+    allow_candidate: Annotated[
+        bool, typer.Option(help="Allow running a non-promoted (candidate) tool.")
+    ] = False,
+    data_dir: DataDirOpt = None,
+) -> None:
+    """Run an executable tool, gated by lifecycle status (spec §4.4.6)."""
+    store = MemoryStore(data_dir)
+    executor = build_default_executor(store)
+    payload = (
+        json.loads(Path(payload_file).read_text(encoding="utf-8"))
+        if payload_file
+        else {}
+    )
+    try:
+        run = executor.run(tool_id, payload, allow_candidate=allow_candidate)
+    except (ToolNotFoundError, ToolNotAllowedError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"ok: {run.ok}")
+    typer.echo(f"output: {run.output}")
+    typer.echo(f"outcome entry: {run.outcome_entry_id}")
+
+
+@tools_app.command("promote")
+def tools_promote(
+    tool_id: Annotated[str, typer.Argument(help="Tool id to promote.")],
+    data_dir: DataDirOpt = None,
+) -> None:
+    """Promote a candidate tool to 'promoted' so it can run freely (spec §4.4.6)."""
+    registry = ToolRegistry(data_dir)
+    if registry.get(tool_id) is None:
+        typer.echo(f"no registered tool {tool_id!r}", err=True)
+        raise typer.Exit(code=1)
+    registry.set_status(tool_id, "promoted")
+    store = MemoryStore(data_dir)
+    loaded = store.latest_version(tool_id)
+    if loaded is not None:
+        loaded.entry.status = "promoted"  # type: ignore[assignment]
+        store.write(loaded.entry, loaded.body)
+    typer.echo(f"promoted {tool_id!r}")
+
+
+@app.command("support")
+def support(
+    payload_file: Annotated[
+        Path, typer.Argument(help="JSON payload for a coding_support action.")
+    ],
+    data_dir: DataDirOpt = None,
+) -> None:
+    """Run the Coding Support Loop from a JSON payload (spec §4.3)."""
+    payload = json.loads(Path(payload_file).read_text(encoding="utf-8"))
+    store = MemoryStore(data_dir)
+    orch = Orchestrator(store)
+    orch.register(CodingSupportLoop(store, context_provider=orch))
+    task = Task(
+        id=str(payload.get("id", "support-task")),
+        kind="coding_support",
+        payload=payload,
+    )
+    result = orch.dispatch(task)
+    typer.echo(f"status: {result.status}")
+    typer.echo(result.outcome_summary)
+    if result.artifacts:
+        typer.echo(f"artifacts: {', '.join(result.artifacts)}")
 
 
 @app.command()
