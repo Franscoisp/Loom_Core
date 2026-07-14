@@ -18,10 +18,13 @@ from loom_core.loops.base import Task
 from loom_core.loops.coding_support import CodingSupportLoop
 from loom_core.loops.distillation import DistillationLoop
 from loom_core.loops.meta import MetaLoop
+from loom_core.mcp.client import MCPClient, MCPConfig
+from loom_core.mcp.server_registry import MCPServerRecord, MCPServerRegistry
 from loom_core.metrics import MetricsStore, compute_metrics
 from loom_core.models import parse_entry
 from loom_core.models_config import DEFAULT_PROVIDERS, ModelStore
 from loom_core.orchestrator import Orchestrator
+from loom_core.plugins.loader import PluginLoader
 from loom_core.projects import (
     CONTINUITY_FILES,
     ProjectRegistry,
@@ -47,6 +50,12 @@ app.add_typer(project_app, name="project")
 
 models_app = typer.Typer(help="Configure LLM providers (spec §9).")
 app.add_typer(models_app, name="models")
+
+mcp_app = typer.Typer(help="Manage MCP servers (spec §13).")
+app.add_typer(mcp_app, name="mcp")
+
+plugin_app = typer.Typer(help="Manage Loom plugins (spec §13).")
+app.add_typer(plugin_app, name="plugin")
 
 
 @app.callback()
@@ -533,6 +542,128 @@ def models_use(
     model = active.default_model if active is not None else "-"
     status = "configured" if store.is_configured() else "key not set"
     typer.echo(f"active provider: {name}  model={model}  ({status})")
+
+
+# --- MCP commands (§13) -----------------------------------------------------
+
+
+@mcp_app.command("add")
+def mcp_add(
+    name: Annotated[str, typer.Argument(help="Server name.")],
+    command: Annotated[str, typer.Option("--cmd", help="Command to run.")],
+    args: Annotated[
+        list[str], typer.Option("--arg", help="Arguments (repeatable).")
+    ] = [],  # noqa: B006
+    env: Annotated[
+        list[str], typer.Option("--env", help="Env vars KEY=VAL (repeatable).")
+    ] = [],  # noqa: B006
+    description: Annotated[str | None, typer.Option(help="Human description.")] = None,
+) -> None:
+    """Register an MCP server."""
+    env_dict = dict(e.split("=", 1) for e in env if "=" in e)
+    reg = MCPServerRegistry()
+    reg.add(
+        MCPServerRecord(
+            name=name,
+            command=command,
+            args=list(args),
+            env=env_dict,
+            description=description or "",
+        )
+    )
+    typer.echo(f"MCP server {name!r} registered (command: {command})")
+
+
+@mcp_app.command("list")
+def mcp_list() -> None:
+    """List registered MCP servers."""
+    reg = MCPServerRegistry()
+    servers = reg.list()
+    if not servers:
+        typer.echo("(no MCP servers registered)")
+        return
+    for s in servers:
+        typer.echo(f"  {s.name}  cmd={s.command} {s.args!r}  {s.description}")
+
+
+@mcp_app.command("remove")
+def mcp_remove(name: Annotated[str, typer.Argument(help="Server name.")]) -> None:
+    """Remove a registered MCP server."""
+    reg = MCPServerRegistry()
+    if reg.remove(name):
+        typer.echo(f"removed {name!r}")
+    else:
+        typer.echo(f"unknown server {name!r}", err=True)
+        raise typer.Exit(code=1)
+
+
+@mcp_app.command("tools")
+def mcp_tools(
+    name: Annotated[str, typer.Argument(help="Server name.")],
+) -> None:
+    """Discover and list tools from an MCP server."""
+    reg = MCPServerRegistry()
+    record = reg.get(name)
+    if record is None:
+        typer.echo(f"unknown server {name!r}", err=True)
+        raise typer.Exit(code=1)
+    client = MCPClient(
+        MCPConfig(
+            command=record.command,
+            args=record.args,
+            env=record.env,
+            server_name=record.name,
+        )
+    )
+    try:
+        info = client.start()
+        typer.echo(f"connected to {info.name} v{info.version}")
+        tools = client.discover_tools()
+        if not tools:
+            typer.echo("(no tools discovered)")
+        for t in tools:
+            typer.echo(f"  {t.name}  {t.description}")
+    except Exception as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    finally:
+        client.stop()
+
+
+# --- plugin commands (§13) --------------------------------------------------
+
+
+@plugin_app.command("load")
+def plugin_load(
+    path: Annotated[Path, typer.Argument(help="Path to plugin file/dir.")],
+    name: Annotated[str | None, typer.Option(help="Override plugin name.")] = None,
+) -> None:
+    """Load a plugin by path."""
+    loader = PluginLoader()
+    try:
+        loaded = loader.load(path, name=name or None)
+    except FileNotFoundError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    if loaded.error:
+        typer.echo(f"error loading plugin: {loaded.error}", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(
+        f"loaded plugin {loaded.record.name!r} v{loaded.record.version} "
+        f"from {loaded.record.path}"
+    )
+
+
+@plugin_app.command("list")
+def plugin_list() -> None:
+    """List loaded plugins."""
+    loader = PluginLoader()
+    records = loader.registry.list()
+    if not records:
+        typer.echo("(no plugins recorded)")
+        return
+    for r in records:
+        typer.echo(f"  {r.name}  v{r.version}  [{r.status}]  {r.description}")
 
 
 @app.command("support")
