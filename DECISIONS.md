@@ -167,6 +167,19 @@ Template:
 
 ---
 
+## DEC-014: v3.0 upgrade — Project Support + Multi-LLM added; TUI/Browser/Install deferred
+- **Date:** 2026-07-14
+- **Status:** accepted
+- **Context:** v3.0 Master Specification adds §6 Project Support, §9 Multi-LLM,
+  §11 TUI, §12 Web Browser Tool, §14 Install Script.
+- **Decision:** Implement Project Support + Multi-LLM config immediately
+  (highest impact). Defer TUI, Web Browser Tool, and install script; they are
+  well-defined and can be picked up when requested.
+- **Consequences:** Project isolation and first-class LLM config are done. TUI
+  and browser tool are explicitly backlog items.
+
+---
+
 ## Resolved (formerly Open Questions from spec §11)
 
 - Ranking weights for context packing — DEC-005 (initial, tunable)

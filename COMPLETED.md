@@ -55,3 +55,11 @@ Part of the continuity protocol (spec §5).
 - Created `COMPLETED.md` (new §5 sacred file).
 - Added `skills/` directory at repo root (§16).
 - Added `loom value` and `loom stats` CLI aliases (§15).
+
+### Batch 2: Project Support + Multi-LLM config
+- `projects.py`: `ProjectRegistry` (~/.loom/projects.json), per-project memory
+  scoping, active project switching (§6).
+- `models_config.py`: `ModelStore` (~/.loom/models.json), built-in defaults
+  for OpenAI/DeepSeek/Anthropic/Groq/Ollama, provider CRUD, active
+  provider/model (§9).
+- CLI: `loom project init|list|use|show`, `loom models add|list|use`.
