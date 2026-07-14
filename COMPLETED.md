@@ -56,10 +56,11 @@ Part of the continuity protocol (spec §5).
 - Added `skills/` directory at repo root (§16).
 - Added `loom value` and `loom stats` CLI aliases (§15).
 
-### Batch 2: Project Support + Multi-LLM config
-- `projects.py`: `ProjectRegistry` (~/.loom/projects.json), per-project memory
-  scoping, active project switching (§6).
-- `models_config.py`: `ModelStore` (~/.loom/models.json), built-in defaults
-  for OpenAI/DeepSeek/Anthropic/Groq/Ollama, provider CRUD, active
-  provider/model (§9).
-- CLI: `loom project init|list|use|show`, `loom models add|list|use`.
+### Batch 3: TUI with Textual (§11)
+- `src/loom_core/tui/app.py`: `LoomApp` (Textual framework), status bar
+  (phase/model/claims/value), toggleable sidebar, 6 views: Chat, Memory
+  (browse by layer), Skills (success rates), Progress (continuity files),
+  Value (metrics), Loops (loop status). Slash commands: `/help`, `/quit`,
+  `/refresh`.
+- CLI: `loom tui`. `textual>=0.80` as `[tui]` extra.
+- Quality gates: pytest 72, ruff clean, mypy strict clean.
