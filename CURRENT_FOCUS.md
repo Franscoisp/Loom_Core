@@ -7,29 +7,28 @@ The single most important thing right now. This file overrides chat history.
 
 ## Focus
 
-**Phase 1 (Memory MVP) is complete.** Next: begin **Phase 2 – Loops &
-Orchestrator**.
+**Phase 2 is underway.** Distillation Loop, Orchestrator, and Context Packer are
+done. Next: the **Coding Support Loop** (spec §4.3), then the
+**Meta/Self-Improvement Loop** (spec §4.4) with the skill/tool lifecycle.
 
-Suggested first step: implement the common Loop interface (`name`,
-`can_handle`, `claim`, `run`, `heartbeat`, `release`) and the `LoopResult`
-type (spec §4.1), then build the **Distillation Loop** (spec §4.2) as the first
-concrete loop since it exercises the memory writer directly.
+## What exists now
 
-## What exists now (Phase 1)
-
-- `loom_core.models` — all entry types, strict validation, ISO-8601 Z datetimes.
-- `loom_core.paths` — data-dir resolution + strict naming (§3.4).
-- `loom_core.store.MemoryStore` — atomic write, read, list/filter, search.
-- `loom_core.cli` — `loom memory write|list|show|search`.
-- Quality gates: `pytest`, `ruff check .`, `python -m mypy` (all green).
+- Phase 1 memory core: `models`, `paths`, `store`, `cli` (memory subcommands).
+- Phase 2 so far: `loops/base` (Loop/Task/LoopResult/OwnershipBroker),
+  `orchestrator` (ownership + dispatch + context assembly), `context`
+  (ranked packing within a token budget), `loops/distillation`.
+- CLI: `loom memory ...`, `loom pack`, `loom distill`.
+- Quality gates: `pytest` (35), `ruff check .`, `python -m mypy` — all green.
 
 ## Constraints to keep in mind
 
-- Never overwrite a promoted skill — create a new version (§3.4).
-- Loops must write continuity + memory records; the Orchestrator is the only
-  component that grants/revokes ownership and assembles context packs (§6).
-- Keep context packs within token budget; record what was included and why (§3.5).
+- Only the Orchestrator grants/revokes ownership; loops use the broker (§6).
+- Never overwrite a promoted skill — new version for content changes; stat
+  updates mutate counts in place (§3.3/§5.3).
+- Context packs must respect the token budget and record why entries were
+  included (§3.5). Ranking weights live in DEC-005 (tunable).
 
 ## Not now (deferred)
 
 - Vector index, tool auto-promotion policy, multi-project isolation (§11).
+- Persisting ownership/heartbeats across processes (DEC-004).

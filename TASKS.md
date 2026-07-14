@@ -35,11 +35,24 @@ This file overrides chat history.
 
 ---
 
+## Phase 2 – Loops & Orchestrator
+
+| ID       | Status | Description |
+|----------|--------|-------------|
+| TASK-020 | DONE   | Loop interface, Task, LoopResult, OwnershipBroker (§4.1) |
+| TASK-021 | DONE   | Orchestrator with task ownership grant/revoke + dispatch (§6) |
+| TASK-022 | DONE   | Context Packer with ranking + strict token budget (§3.5) |
+| TASK-023 | DONE   | Distillation Loop (§4.2) |
+| TASK-024 | DONE   | CLI commands: `loom pack`, `loom distill` |
+| TASK-025 | DONE   | Tests for loops / orchestrator / context / distillation |
+
+---
+
 ## Backlog / Later Phases
 
-- Distillation Loop (spec §4.2)
 - Coding Support Loop (spec §4.3)
-- Meta / Self-Improvement Loop (spec §4.4)
-- Orchestrator + Context Packer (spec §6, §3.5)
+- Meta / Self-Improvement Loop (spec §4.4) + skill/tool lifecycle
 - Tool registry & discovery (spec §5.4)
 - Value metrics derivation (spec §8)
+- Persist ownership + heartbeats across processes (currently in-memory, DEC-004)
+- Loop-driven continuity-file enforcement (spec §6 step 8, §7)
