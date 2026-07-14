@@ -154,6 +154,17 @@ Template:
   other. Not a distributed lock; true multi-node coordination (DB/queue) remains
   out of scope.
 
+## DEC-013: GitHub Actions CI runs the quality gates
+- **Date:** 2026-07-14
+- **Status:** accepted
+- **Context:** The gates (ruff, mypy --strict, pytest) were run manually. CI
+  makes them enforced and visible on every change.
+- **Decision:** Add `.github/workflows/ci.yml` running ruff, mypy, pytest (with
+  coverage), and a CLI smoke test on push + PR across a matrix of
+  Ubuntu/Windows × Python 3.11/3.12.
+- **Consequences:** Regressions are caught automatically. The README status
+  badge needs the real `OWNER/REPO` once a remote exists.
+
 ---
 
 ## Resolved (formerly Open Questions from spec §11)

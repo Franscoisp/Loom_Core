@@ -85,6 +85,7 @@ This file overrides chat history.
 | TASK-052 | DONE   | DEC-010: one data dir per project (README) |
 | TASK-053 | DONE   | DEC-011: CLI/files as interface; GUI deferred |
 | TASK-054 | DONE   | DEC-012: advisory FileLock wired into ownership/metrics/registry |
+| TASK-055 | DONE   | GitHub Actions CI (ruff + mypy + pytest/coverage + CLI smoke) |
 
 ---
 

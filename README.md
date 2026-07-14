@@ -1,5 +1,8 @@
 # Loom Core
 
+<!-- Replace OWNER/REPO once the GitHub remote is set -->
+[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+
 A local-first, **memory-centric** runtime.
 
 Loom Core maintains a durable, structured, outcome-aware record of what was
@@ -59,3 +62,13 @@ loom metrics --data-dir C:\path\to\projectB\data   # per-command override
 Concurrent processes sharing one data dir are safe: writes to the JSON state
 files (ownership, metrics, tool registry) are guarded by an advisory file lock
 (DEC-012).
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs the quality gates on every push and pull request
+across a matrix of Ubuntu + Windows and Python 3.11 + 3.12:
+
+- `ruff check .` (lint)
+- `python -m mypy` (strict types)
+- `pytest --cov=loom_core` (tests + coverage)
+- a CLI smoke test (`loom version`)

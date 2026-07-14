@@ -9,6 +9,37 @@ Session ID format: `YYYY-MM-DD-NN`.
 
 ---
 
+## Session 2026-07-14-08 — CI + BOM fix
+
+- **Session ID:** 2026-07-14-08
+- **Date:** 2026-07-14
+- **Focus:** Wire up GitHub Actions CI; fix a JSON-BOM robustness bug.
+
+### What happened
+- Live terminal walkthrough of the full system (memory → pack → distill →
+  meta/tool lifecycle → metrics → doctor). It surfaced a bug: PowerShell's
+  `Set-Content -Encoding utf8` writes a UTF-8 BOM that `json.loads` rejected.
+- Fixed: added `cli._load_json` (reads `utf-8-sig`, validates object shape) and
+  routed `distill`, `meta run`, `support`, and `tools run` payload reads through
+  it (commit ab12021).
+- Added `.github/workflows/ci.yml` (TASK-055, DEC-013): ruff + mypy + pytest
+  (coverage) + CLI smoke test, matrix Ubuntu/Windows × Python 3.11/3.12, on push
+  and PR. Validated the YAML and confirmed coverage locally (~87%).
+- README: added CI badge placeholder + a "Continuous integration" section.
+
+### Outcome
+- **Status:** success. Quality gates: pytest 72 passed, ruff clean, mypy strict
+  clean; local coverage ~87%.
+
+### Notes
+- README badge needs the real `OWNER/REPO` once a git remote is created.
+
+### Next session
+- Optional: push to a remote and confirm the CI run goes green; add venv
+  quickstart if desired.
+
+---
+
 ## Session 2026-07-14-07 — Phase 5: resolve §11 open questions
 
 - **Session ID:** 2026-07-14-07
