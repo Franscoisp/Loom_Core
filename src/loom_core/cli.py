@@ -15,13 +15,19 @@ import typer
 from loom_core import __version__
 from loom_core.loops.base import Task
 from loom_core.loops.distillation import DistillationLoop
+from loom_core.loops.meta import MetaLoop
 from loom_core.models import parse_entry
 from loom_core.orchestrator import Orchestrator
+from loom_core.registry import ToolRegistry
 from loom_core.store import LoadedEntry, MemoryStore
 
 app = typer.Typer(help="Loom Core - local-first, memory-centric runtime.")
 memory_app = typer.Typer(help="Inspect and manage Loom memory entries.")
+meta_app = typer.Typer(help="Self-improvement: detect, propose, evaluate.")
+tools_app = typer.Typer(help="Inspect the tool registry.")
 app.add_typer(memory_app, name="memory")
+app.add_typer(meta_app, name="meta")
+app.add_typer(tools_app, name="tools")
 
 
 @app.callback()
@@ -216,6 +222,57 @@ def distill(
     typer.echo(result.outcome_summary)
     typer.echo(f"entries written: {', '.join(result.memory_entries_written)}")
     typer.echo(f"metrics: {result.metrics}")
+
+
+def _run_meta(payload: dict[str, object], data_dir: Path | None) -> None:
+    store = MemoryStore(data_dir)
+    orch = Orchestrator(store)
+    orch.register(MetaLoop(store))
+    task = Task(id=str(payload.get("session_id", "meta-task")), kind="meta", payload=payload)
+    result = orch.dispatch(task)
+    typer.echo(f"status: {result.status}")
+    typer.echo(result.outcome_summary)
+    if result.memory_entries_written:
+        typer.echo(f"entries written: {', '.join(result.memory_entries_written)}")
+    typer.echo(f"metrics: {result.metrics}")
+
+
+@meta_app.command("detect")
+def meta_detect(
+    min_samples: Annotated[int, typer.Option(help="Min uses before judging a skill.")] = 3,
+    low_rate: Annotated[float, typer.Option(help="Success-rate threshold.")] = 0.5,
+    data_dir: DataDirOpt = None,
+) -> None:
+    """Scan memory for capability gaps and repeated failures (spec §4.4.2)."""
+    _run_meta(
+        {"action": "detect", "min_samples": min_samples, "low_rate": low_rate},
+        data_dir,
+    )
+
+
+@meta_app.command("run")
+def meta_run(
+    payload_file: Annotated[
+        Path, typer.Argument(help="JSON payload for a meta action (propose/evaluate).")
+    ],
+    data_dir: DataDirOpt = None,
+) -> None:
+    """Run an arbitrary meta action (propose/evaluate) from a JSON payload."""
+    payload = json.loads(Path(payload_file).read_text(encoding="utf-8"))
+    _run_meta(payload, data_dir)
+
+
+@tools_app.command("list")
+def tools_list(data_dir: DataDirOpt = None) -> None:
+    """List registered tools and their lifecycle status (spec §5.4)."""
+    records = ToolRegistry(data_dir).list()
+    if not records:
+        typer.echo("(no registered tools)")
+        return
+    for rec in records:
+        typer.echo(
+            f"{rec.id}  v{rec.version}  [{rec.status}]  skill={rec.skill_id or '-'}"
+        )
 
 
 if __name__ == "__main__":

@@ -45,14 +45,16 @@ This file overrides chat history.
 | TASK-023 | DONE   | Distillation Loop (§4.2) |
 | TASK-024 | DONE   | CLI commands: `loom pack`, `loom distill` |
 | TASK-025 | DONE   | Tests for loops / orchestrator / context / distillation |
+| TASK-026 | DONE   | Coding Support Loop (§4.3) — context / surface_skills / record_outcome |
+| TASK-027 | DONE   | Meta / Self-Improvement Loop (§4.4) — detect / propose / evaluate + lifecycle |
+| TASK-028 | DONE   | Tool registry & discovery (§5.4); CLI `loom meta`, `loom tools` |
 
 ---
 
 ## Backlog / Later Phases
 
-- Coding Support Loop (spec §4.3)
-- Meta / Self-Improvement Loop (spec §4.4) + skill/tool lifecycle
-- Tool registry & discovery (spec §5.4)
 - Value metrics derivation (spec §8)
-- Persist ownership + heartbeats across processes (currently in-memory, DEC-004)
 - Loop-driven continuity-file enforcement (spec §6 step 8, §7)
+- Persist ownership + heartbeats across processes (currently in-memory, DEC-004)
+- Vector index for retrieval (spec §11) — open question
+- Actual executable tool implementations behind registry candidates (§4.4.6)

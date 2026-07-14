@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Protocol, runtime_checkable
 
 from loom_core.models import BaseEntry, EntryType, Status
 from loom_core.store import LoadedEntry, MemoryStore
@@ -41,6 +42,24 @@ class ContextPack:
         """Render the pack as a single string suitable for a model prompt."""
         blocks = [item.text for item in self.items]
         return "\n\n---\n\n".join(blocks)
+
+
+@runtime_checkable
+class ContextProvider(Protocol):
+    """What a loop needs to request an optimized context pack (spec §6).
+
+    The Orchestrator implements this; loops depend on the protocol so context
+    assembly always flows through the single arbiter.
+    """
+
+    def context_pack(
+        self,
+        query: str = "",
+        *,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        token_budget: int = 2000,
+    ) -> ContextPack: ...
 
 
 def _as_str(type_or_status: object) -> str:

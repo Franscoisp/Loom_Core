@@ -7,28 +7,32 @@ The single most important thing right now. This file overrides chat history.
 
 ## Focus
 
-**Phase 2 is underway.** Distillation Loop, Orchestrator, and Context Packer are
-done. Next: the **Coding Support Loop** (spec §4.3), then the
-**Meta/Self-Improvement Loop** (spec §4.4) with the skill/tool lifecycle.
+**Phase 2 is complete.** All four loop roles exist (Distillation, Coding
+Support, Meta/Self-Improvement) plus the Orchestrator, Context Packer, and Tool
+Registry. Next: **Phase 3** — value metrics (§8), loop-driven continuity-file
+enforcement (§6 step 8, §7), and persisting ownership/heartbeats (DEC-004).
 
 ## What exists now
 
-- Phase 1 memory core: `models`, `paths`, `store`, `cli` (memory subcommands).
-- Phase 2 so far: `loops/base` (Loop/Task/LoopResult/OwnershipBroker),
-  `orchestrator` (ownership + dispatch + context assembly), `context`
-  (ranked packing within a token budget), `loops/distillation`.
-- CLI: `loom memory ...`, `loom pack`, `loom distill`.
-- Quality gates: `pytest` (35), `ruff check .`, `python -m mypy` — all green.
+- Memory core: `models`, `paths`, `store` (write/read/list/search + skill-stat
+  & versioning helpers), `cli` (`memory ...`).
+- Loops: `loops/base`, `loops/distillation` (§4.2), `loops/coding_support`
+  (§4.3), `loops/meta` (§4.4).
+- `orchestrator` (ownership + dispatch + context assembly), `context`
+  (ranked packing + `ContextProvider`), `registry` (tool registry §5.4).
+- CLI: `loom memory ...`, `loom pack`, `loom distill`, `loom meta detect|run`,
+  `loom tools list`.
+- Quality gates: `pytest` (46), `ruff check .`, `python -m mypy` — all green.
 
 ## Constraints to keep in mind
 
 - Only the Orchestrator grants/revokes ownership; loops use the broker (§6).
-- Never overwrite a promoted skill — new version for content changes; stat
-  updates mutate counts in place (§3.3/§5.3).
-- Context packs must respect the token budget and record why entries were
-  included (§3.5). Ranking weights live in DEC-005 (tunable).
+- Skill/tool content changes create a new version; stat updates mutate counts
+  in place (§3.3/§5.3). Promotion requires evidence + expected improvement +
+  success metric (§4.4.4).
+- Context packs respect the token budget and record rationale (§3.5).
 
 ## Not now (deferred)
 
 - Vector index, tool auto-promotion policy, multi-project isolation (§11).
-- Persisting ownership/heartbeats across processes (DEC-004).
+- Executable implementations behind candidate tools (§4.4.6).

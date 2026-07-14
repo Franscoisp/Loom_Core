@@ -10,7 +10,8 @@ This file overrides chat history. Update after every meaningful change.
 
 **Phase 0 – Foundation** ✅ COMPLETE
 **Phase 1 – Memory MVP** ✅ COMPLETE
-**Phase 2 – Loops & Orchestrator** 🔄 IN PROGRESS (Distillation loop + Orchestrator + Context Packer done; Coding Support & Meta loops remain)
+**Phase 2 – Loops & Orchestrator** ✅ COMPLETE
+**Phase 3 – Value metrics, continuity enforcement, persistence** ⏳ NOT STARTED (next)
 
 ---
 
@@ -45,23 +46,25 @@ This file overrides chat history. Update after every meaningful change.
 - [x] TASK-023: `DistillationLoop` — candidates → memory, skill-stat updates, episode (`loops/distillation.py`)
 - [x] TASK-024: CLI `loom pack`, `loom distill`
 - [x] TASK-025: 13 new tests (orchestrator, context, distillation)
-- [ ] Coding Support Loop (§4.3)
-- [ ] Meta / Self-Improvement Loop (§4.4)
+- [x] TASK-026: Coding Support Loop — context/surface_skills/record_outcome (`loops/coding_support.py`, §4.3)
+- [x] TASK-027: Meta/Self-Improvement Loop — detect/propose/evaluate + lifecycle + audit (`loops/meta.py`, §4.4)
+- [x] TASK-028: Tool registry & discovery (`registry.py`, §5.4); CLI `loom meta ...`, `loom tools list`
+- [x] Refactor: shared skill-stat/versioning helpers moved to `MemoryStore`
 
-**Quality gates (Phase 2):** pytest (35 passed), ruff (clean), mypy --strict (clean).
+**Quality gates (Phase 2):** pytest (46 passed), ruff (clean), mypy --strict (clean).
 
 ---
 
 ## In Progress
 
-- Phase 2 remaining loops: Coding Support (§4.3), Meta/Self-Improvement (§4.4).
+_None._
 
 ---
 
 ## Next Up
 
-- Coding Support Loop, then Meta/Self-Improvement Loop + skill/tool lifecycle.
-- Tool registry & discovery (§5.4); value metrics derivation (§8).
+- Phase 3: value metrics derivation (§8), loop-driven continuity-file
+  enforcement (§6 step 8, §7), and persisting ownership/heartbeats (DEC-004).
 
 ---
 

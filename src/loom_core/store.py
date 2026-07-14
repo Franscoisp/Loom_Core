@@ -10,13 +10,16 @@ from __future__ import annotations
 import os
 import tempfile
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 import frontmatter
 import yaml
 
-from loom_core.models import BaseEntry, parse_entry
+from loom_core.models import BaseEntry, EntryType, parse_entry
 from loom_core.paths import path_for, resolve_data_dir
+
+_STAT_TYPES = {EntryType.skill.value, EntryType.tool.value}
 
 
 @dataclass(frozen=True)
@@ -145,3 +148,51 @@ class MemoryStore:
         scored.sort(key=lambda t: (-t[0], t[1].entry.id))
         ordered = [loaded for _, loaded in scored]
         return ordered[:limit] if limit is not None else ordered
+
+    # --- skill/tool helpers (used by loops) ---------------------------------
+
+    def versions(self, entry_id: str) -> list[LoadedEntry]:
+        """All skill/tool versions sharing an id, sorted ascending by version."""
+        matches = [
+            loaded
+            for loaded in self.list_entries(entry_id=entry_id)
+            if str(loaded.entry.type) in _STAT_TYPES
+        ]
+        return sorted(matches, key=lambda m: int(getattr(m.entry, "version", 1)))
+
+    def latest_version(self, entry_id: str) -> LoadedEntry | None:
+        """The highest-version skill/tool for an id, or None."""
+        vs = self.versions(entry_id)
+        return vs[-1] if vs else None
+
+    def next_version_number(self, entry_id: str) -> int:
+        """The version number a new revision of this skill/tool should use."""
+        latest = self.latest_version(entry_id)
+        return int(getattr(latest.entry, "version", 1)) + 1 if latest else 1
+
+    def update_stats(self, entry_id: str, outcome: str) -> bool:
+        """Increment success/failure counts on the latest skill/tool version.
+
+        Stat updates mutate the existing version in place (they are not a new
+        version); only content changes create a new version (spec §3.3/§5.3).
+        Returns True if an update was applied.
+        """
+        latest = self.latest_version(entry_id)
+        if latest is None:
+            return False
+        entry = latest.entry
+        if outcome == "success":
+            entry.success_count += 1  # type: ignore[attr-defined]
+        elif outcome == "failure":
+            entry.failure_count += 1  # type: ignore[attr-defined]
+        else:
+            return False
+        total = entry.success_count + entry.failure_count  # type: ignore[attr-defined]
+        entry.success_rate = (  # type: ignore[attr-defined]
+            round(entry.success_count / total, 4) if total else 0.0  # type: ignore[attr-defined]
+        )
+        now = datetime.now(UTC)
+        entry.last_used = now  # type: ignore[attr-defined]
+        entry.updated = now
+        self.write(entry, latest.body)
+        return True

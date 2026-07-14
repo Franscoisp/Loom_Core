@@ -18,14 +18,11 @@ Task payload shape (``task.kind == "distill"``)::
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import cast
 
 from loom_core.loops.base import Loop, LoopResult, OwnershipBroker, Task
-from loom_core.models import EntryType, SkillEntry, ToolEntry, parse_entry
+from loom_core.models import parse_entry
 from loom_core.store import MemoryStore
-
-_STAT_TYPES = {EntryType.skill.value, EntryType.tool.value}
 
 
 class DistillationLoop(Loop):
@@ -68,7 +65,7 @@ class DistillationLoop(Loop):
         for used in skills_used:
             sid = str(used.get("id", ""))
             outcome = str(used.get("outcome", "unknown"))
-            if sid and self._update_stats(sid, outcome):
+            if sid and self.store.update_stats(sid, outcome):
                 stats_updated.append(sid)
 
         # 6: record an episode that distillation itself occurred.
@@ -110,32 +107,6 @@ class DistillationLoop(Loop):
         )
 
     # --- helpers ------------------------------------------------------------
-
-    def _update_stats(self, entry_id: str, outcome: str) -> bool:
-        """Increment success/failure counts on the latest skill/tool version."""
-        matches = [
-            loaded
-            for loaded in self.store.list_entries(entry_id=entry_id)
-            if str(loaded.entry.type) in _STAT_TYPES
-        ]
-        if not matches:
-            return False
-        latest = max(matches, key=lambda m: getattr(m.entry, "version", 1))
-        entry = cast("SkillEntry | ToolEntry", latest.entry)
-
-        if outcome == "success":
-            entry.success_count += 1
-        elif outcome == "failure":
-            entry.failure_count += 1
-        else:
-            return False
-
-        total = entry.success_count + entry.failure_count
-        entry.success_rate = round(entry.success_count / total, 4) if total else 0.0
-        entry.last_used = datetime.now(UTC)
-        entry.updated = datetime.now(UTC)
-        self.store.write(entry, latest.body)
-        return True
 
     @staticmethod
     def _episode_body(

@@ -9,6 +9,48 @@ Session ID format: `YYYY-MM-DD-NN`.
 
 ---
 
+## Session 2026-07-14-04 — Phase 2: Coding Support + Meta loops (complete)
+
+- **Session ID:** 2026-07-14-04
+- **Date:** 2026-07-14
+- **Focus:** Finish Phase 2 — Coding Support Loop, Meta Loop, tool registry.
+
+### What happened
+- Refactored shared skill/tool logic into `MemoryStore`: `versions`,
+  `latest_version`, `next_version_number`, `update_stats` (stat updates mutate
+  in place; only content changes create a new version). Distillation now uses it.
+- `loops/coding_support.py` (§4.3, TASK-026): actions `context` (requests a pack
+  via the Orchestrator through the new `ContextProvider` protocol — never
+  assembles packs itself), `surface_skills` (search skills/tools), and
+  `record_outcome` (write an outcome entry + update skill stats). Never owns
+  code-writing.
+- `loops/meta.py` (§4.4, TASK-027): `detect` (underperforming skills + failure
+  clusters → proposals), `propose` (new_skill / skill_improvement /
+  new_tool / anti_pattern as drafts; new_tool also registers a candidate and a
+  companion usage skill per §4.4.6), `evaluate` (promote/reject/deprecate;
+  promotion blocked unless evidence + expected_improvement + success_metric are
+  supplied per §4.4.4). Every transition writes an audit episode.
+- `registry.py` (§5.4, TASK-028): JSON `ToolRegistry` with atomic writes.
+- `cli.py`: `loom meta detect`, `loom meta run <json>`, `loom tools list`.
+- `tests/`: +11 tests (coding support, meta); 46 total.
+- Verified end-to-end via CLI: proposed a candidate tool (registered) + skill.
+
+### Outcome
+- **Status:** success — Phase 2 COMPLETE (TASK-020 → TASK-028).
+- Quality gates: pytest 46 passed, ruff clean, mypy --strict clean.
+
+### Lessons / notes
+- The `ContextProvider` protocol lets loops depend on the Orchestrator's context
+  assembly without a circular import.
+- Meta promotion gating (evidence/expected_improvement/success_metric) keeps the
+  learning engine honest and reversible (spec §4.4.4).
+
+### Next session
+- Phase 3: value metrics (§8), loop-driven continuity enforcement (§6/§7), and
+  persisting ownership/heartbeats (DEC-004).
+
+---
+
 ## Session 2026-07-14-03 — Phase 2: Loops & Orchestrator (partial)
 
 - **Session ID:** 2026-07-14-03
