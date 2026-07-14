@@ -24,14 +24,14 @@ This file overrides chat history.
 
 | ID       | Status | Description |
 |----------|--------|-------------|
-| TASK-010 | TODO   | Define Pydantic models for all memory entry types (schema §3.3) |
-| TASK-011 | TODO   | Implement atomic memory writer |
-| TASK-012 | TODO   | Implement memory reader and basic list/filter |
-| TASK-013 | TODO   | Implement simple keyword search |
-| TASK-014 | TODO   | CLI commands for memory write / list / show |
-| TASK-015 | TODO   | Validation that rejects malformed entries |
-| TASK-016 | TODO   | Unit + integration tests using temporary directories |
-| TASK-017 | TODO   | Record first real memory entries from the development process itself |
+| TASK-010 | DONE   | Define Pydantic models for all memory entry types (schema §3.3) |
+| TASK-011 | DONE   | Implement atomic memory writer |
+| TASK-012 | DONE   | Implement memory reader and basic list/filter |
+| TASK-013 | DONE   | Implement simple keyword search |
+| TASK-014 | DONE   | CLI commands for memory write / list / show (+ search) |
+| TASK-015 | DONE   | Validation that rejects malformed entries |
+| TASK-016 | DONE   | Unit + integration tests using temporary directories |
+| TASK-017 | DONE   | Record first real memory entries from the development process itself |
 
 ---
 

@@ -7,20 +7,29 @@ The single most important thing right now. This file overrides chat history.
 
 ## Focus
 
-**Transition from Phase 0 (Foundation) to Phase 1 (Memory MVP).**
+**Phase 1 (Memory MVP) is complete.** Next: begin **Phase 2 – Loops &
+Orchestrator**.
 
-Immediate next action: **TASK-010** — define Pydantic models for all memory
-entry types per the Universal Memory Entry Schema (spec §3.3), including the
-extra fields for skills/tools and episodes.
+Suggested first step: implement the common Loop interface (`name`,
+`can_handle`, `claim`, `run`, `heartbeat`, `release`) and the `LoopResult`
+type (spec §4.1), then build the **Distillation Loop** (spec §4.2) as the first
+concrete loop since it exercises the memory writer directly.
+
+## What exists now (Phase 1)
+
+- `loom_core.models` — all entry types, strict validation, ISO-8601 Z datetimes.
+- `loom_core.paths` — data-dir resolution + strict naming (§3.4).
+- `loom_core.store.MemoryStore` — atomic write, read, list/filter, search.
+- `loom_core.cli` — `loom memory write|list|show|search`.
+- Quality gates: `pytest`, `ruff check .`, `python -m mypy` (all green).
 
 ## Constraints to keep in mind
 
-- Every memory file = YAML frontmatter (schema §3.3) + Markdown body.
-- File naming rules are strict (spec §3.4). Never overwrite a promoted skill —
-  create a new version.
-- Validation must reject malformed entries (TASK-015).
-- Tests use temporary directories, never the real `data/` (TASK-016).
+- Never overwrite a promoted skill — create a new version (§3.4).
+- Loops must write continuity + memory records; the Orchestrator is the only
+  component that grants/revokes ownership and assembles context packs (§6).
+- Keep context packs within token budget; record what was included and why (§3.5).
 
 ## Not now (deferred)
 
-- Loops, Orchestrator, context packing, vector index, tool auto-promotion.
+- Vector index, tool auto-promotion policy, multi-project isolation (§11).

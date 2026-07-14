@@ -9,6 +9,50 @@ Session ID format: `YYYY-MM-DD-NN`.
 
 ---
 
+## Session 2026-07-14-02 — Phase 1: Memory MVP
+
+- **Session ID:** 2026-07-14-02
+- **Date:** 2026-07-14
+- **Focus:** Implement the Memory MVP (TASK-010 → TASK-017).
+
+### What happened
+- `src/loom_core/models.py`: Pydantic v2 models for every entry type (core,
+  preference, outcome, anti-pattern, entity, relation, episode, skill, tool).
+  Strict (`extra="forbid"`), timezone-aware datetimes serialized to ISO-8601 Z,
+  filename-safe id validation, `success_rate` auto-recomputed from counts,
+  `parse_entry()` discriminated validation (TASK-010, TASK-015).
+- `src/loom_core/paths.py`: data-dir resolution (arg > `LOOM_DATA_DIR` > `./data`)
+  and strict per-type file naming (spec §3.4).
+- `src/loom_core/store.py`: `MemoryStore` with atomic write (temp file +
+  `os.replace` + fsync), reader, list/filter, ranked keyword search
+  (TASK-011/012/013).
+- `src/loom_core/cli.py`: `loom memory write|list|show|search` using Typer
+  `Annotated` options (TASK-014).
+- `tests/`: 22 tests (models, store, CLI) all using temp dirs (TASK-016).
+- Added `types-PyYAML` dev dep for mypy.
+- Recorded first real memory entries in `data/` via the CLI (TASK-017):
+  `memory-is-the-center` (core), `run-quality-gates` (skill),
+  `phase-1-memory-mvp` (episode).
+- Swapped skill/tool mixin inheritance so `id`/`title` lead the frontmatter.
+
+### Outcome
+- **Status:** success
+- Phase 1 tasks TASK-010 through TASK-017 complete.
+- Quality gates: pytest 22 passed, ruff clean, mypy --strict clean.
+
+### Lessons / notes
+- Typer options need `Annotated[...]` to avoid ruff B008.
+- With `use_enum_values=True`, `entry.type` becomes a plain string after
+  validation; path logic handles both enum and string forms.
+- Pydantic field order follows reverse MRO; `(_StatsMixin, BaseEntry)` puts base
+  fields first for human-readable frontmatter.
+
+### Next session
+- Begin Phase 2: common Loop interface + `LoopResult` (§4.1), then the
+  Distillation Loop (§4.2).
+
+---
+
 ## Session 2026-07-14-01 — Phase 0: Foundation
 
 - **Session ID:** 2026-07-14-01
