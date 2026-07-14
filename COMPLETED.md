@@ -56,11 +56,14 @@ Part of the continuity protocol (spec §5).
 - Added `skills/` directory at repo root (§16).
 - Added `loom value` and `loom stats` CLI aliases (§15).
 
-### Batch 3: TUI with Textual (§11)
-- `src/loom_core/tui/app.py`: `LoomApp` (Textual framework), status bar
-  (phase/model/claims/value), toggleable sidebar, 6 views: Chat, Memory
-  (browse by layer), Skills (success rates), Progress (continuity files),
-  Value (metrics), Loops (loop status). Slash commands: `/help`, `/quit`,
-  `/refresh`.
-- CLI: `loom tui`. `textual>=0.80` as `[tui]` extra.
-- Quality gates: pytest 72, ruff clean, mypy strict clean.
+### Batch 4: Web Browser Tool + Install Scripts
+- `browser.py`: `WebBrowser` class using stdlib `urllib` + `html.parser` (zero
+  deps). Domain allowlist for safety; `allow_untrusted` flag. `_TextExtractor`
+  for HTML-to-text conversion. Max chars + timeout guards (§12).
+- `tooling.py`: registered as `web-fetch` in `build_default_executor`.
+- `cli.py`: `loom fetch <URL>` command with `--allow-untrusted` flag.
+- `tui/app.py`: `/fetch <URL>` and `/distill-fetch <URL>` slash commands.
+  Results shown inline; distill auto-saves fetched content as a core memory
+  entry.
+- `scripts/install.ps1`, `scripts/install.sh`: one-line installers (§14).
+- CI: `pip install -e ".[dev,tui]"` to include Textual.
