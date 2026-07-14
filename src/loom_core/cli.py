@@ -13,6 +13,11 @@ from loom_core import __version__
 app = typer.Typer(help="Loom Core - local-first, memory-centric runtime.")
 
 
+@app.callback()
+def main() -> None:
+    """Loom Core - local-first, memory-centric runtime."""
+
+
 @app.command()
 def version() -> None:
     """Print the Loom Core version."""
