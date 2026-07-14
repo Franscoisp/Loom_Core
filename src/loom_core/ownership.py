@@ -13,6 +13,7 @@ import os
 import tempfile
 from datetime import UTC, datetime
 
+from loom_core.locking import FileLock
 from loom_core.store import MemoryStore
 
 OWNERSHIP_FILENAME = "ownership.json"
@@ -75,46 +76,51 @@ class OwnershipRegistry:
         return (_utcnow() - last).total_seconds() > self.ttl_seconds
 
     def grant(self, task_id: str, loop_name: str) -> bool:
-        data = self._load()
-        record = data.get(task_id)
-        now = _iso(_utcnow())
-        if record is None or record.get("loop_name") == loop_name or self._is_stale(
-            record
-        ):
-            data[task_id] = {
-                "loop_name": loop_name,
-                "since": record["since"]
-                if record and record.get("loop_name") == loop_name
-                else now,
-                "last_heartbeat": now,
-            }
-            self._save(data)
-            return True
-        return False
+        with FileLock(self.path):
+            data = self._load()
+            record = data.get(task_id)
+            now = _iso(_utcnow())
+            if (
+                record is None
+                or record.get("loop_name") == loop_name
+                or self._is_stale(record)
+            ):
+                data[task_id] = {
+                    "loop_name": loop_name,
+                    "since": record["since"]
+                    if record and record.get("loop_name") == loop_name
+                    else now,
+                    "last_heartbeat": now,
+                }
+                self._save(data)
+                return True
+            return False
 
     def revoke(self, task_id: str, loop_name: str) -> None:
-        data = self._load()
-        record = data.get(task_id)
-        if record is None:
-            return
-        if record.get("loop_name") != loop_name:
-            raise OwnershipError(
-                f"{loop_name} cannot release task {task_id} owned by "
-                f"{record.get('loop_name')}"
-            )
-        del data[task_id]
-        self._save(data)
+        with FileLock(self.path):
+            data = self._load()
+            record = data.get(task_id)
+            if record is None:
+                return
+            if record.get("loop_name") != loop_name:
+                raise OwnershipError(
+                    f"{loop_name} cannot release task {task_id} owned by "
+                    f"{record.get('loop_name')}"
+                )
+            del data[task_id]
+            self._save(data)
 
     def heartbeat(self, loop_name: str) -> None:
-        data = self._load()
-        now = _iso(_utcnow())
-        changed = False
-        for record in data.values():
-            if record.get("loop_name") == loop_name:
-                record["last_heartbeat"] = now
-                changed = True
-        if changed:
-            self._save(data)
+        with FileLock(self.path):
+            data = self._load()
+            now = _iso(_utcnow())
+            changed = False
+            for record in data.values():
+                if record.get("loop_name") == loop_name:
+                    record["last_heartbeat"] = now
+                    changed = True
+            if changed:
+                self._save(data)
 
     def owner_of(self, task_id: str) -> str | None:
         record = self._load().get(task_id)

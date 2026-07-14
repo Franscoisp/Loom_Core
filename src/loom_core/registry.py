@@ -13,6 +13,7 @@ import tempfile
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 
+from loom_core.locking import FileLock
 from loom_core.paths import resolve_data_dir
 
 REGISTRY_RELPATH = ("procedural", "tools", "registry.json")
@@ -60,17 +61,19 @@ class ToolRegistry:
             record.registered = datetime.now(UTC).isoformat().replace(
                 "+00:00", "Z"
             )
-        data = self._load()
-        data[record.id] = asdict(record)
-        self._save(data)
+        with FileLock(self.path):
+            data = self._load()
+            data[record.id] = asdict(record)
+            self._save(data)
         return record
 
     def set_status(self, tool_id: str, status: str) -> bool:
-        data = self._load()
-        if tool_id not in data:
-            return False
-        data[tool_id]["status"] = status
-        self._save(data)
+        with FileLock(self.path):
+            data = self._load()
+            if tool_id not in data:
+                return False
+            data[tool_id]["status"] = status
+            self._save(data)
         return True
 
     def get(self, tool_id: str) -> ToolRecord | None:

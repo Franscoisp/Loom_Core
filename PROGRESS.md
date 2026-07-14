@@ -13,9 +13,11 @@ This file overrides chat history. Update after every meaningful change.
 **Phase 2 – Loops & Orchestrator** ✅ COMPLETE
 **Phase 3 – Metrics, persistence, continuity** ✅ COMPLETE
 **Phase 4 – Executable tools & enforcement** ✅ COMPLETE
+**Phase 5 – §11 open questions resolved** ✅ COMPLETE
 
-All spec sections §2–§10 are implemented and tested. Remaining items are §11
-open questions, explicitly deferred in DEC-007.
+All spec sections §2–§10 are implemented and tested. The §11 open questions are
+now all resolved (DEC-005, DEC-008..012); the only coded one was advisory file
+locking (DEC-012).
 
 ---
 
@@ -76,6 +78,16 @@ open questions, explicitly deferred in DEC-007.
 
 **Quality gates (Phase 4):** pytest (67 passed), ruff (clean), mypy --strict (clean).
 
+### Phase 5 – §11 open questions resolved (2026-07-14)
+- [x] DEC-008: retrieval stays keyword-based (no vector index)
+- [x] DEC-009: tool promotion manual / evidence-gated (no auto-promotion)
+- [x] DEC-010: one data directory per project (documented in README)
+- [x] DEC-011: CLI + files are the interface; desktop GUI deferred
+- [x] DEC-012: advisory `FileLock` wired into ownership / metrics / registry (`locking.py`)
+- [x] +6 tests (locking + concurrent increments)
+
+**Quality gates (Phase 5):** pytest (72 passed), ruff (clean), mypy --strict (clean).
+
 ---
 
 ## In Progress
@@ -86,9 +98,9 @@ _None._
 
 ## Next Up
 
-- Nothing required by the spec. All remaining work is §11 open questions,
-  deferred in DEC-007 (vector index, auto-promotion policy, multi-project
-  isolation, desktop app IA, multi-writer locking). Revisit on real demand.
+- Nothing outstanding. Loom Core is feature-complete against the spec and all
+  §11 open questions are resolved. Future work would be new feature requests
+  (e.g., a GUI, embeddings) which are explicitly out of current scope.
 
 ---
 

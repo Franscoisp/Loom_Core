@@ -9,6 +9,45 @@ Session ID format: `YYYY-MM-DD-NN`.
 
 ---
 
+## Session 2026-07-14-07 — Phase 5: resolve §11 open questions
+
+- **Session ID:** 2026-07-14-07
+- **Date:** 2026-07-14
+- **Focus:** Walk through and resolve all §11 open questions.
+
+### What happened
+- Reviewed the five §11 open questions with the user and recorded decisions:
+  - DEC-008: keep keyword retrieval (no vector index).
+  - DEC-009: tool promotion manual / evidence-gated (no auto-promotion).
+  - DEC-010: one data directory per project (documented in README).
+  - DEC-011: CLI + files are the interface; desktop GUI deferred.
+  - DEC-012: add advisory file locking for concurrent writers.
+- Implemented DEC-012: `locking.py` with a dependency-free, cross-platform
+  `FileLock` (atomic `O_CREAT|O_EXCL` lock file, polling, stale-lock breaking).
+  Wired it into the read-modify-write critical sections of `ownership.py`,
+  `metrics.py`, and `registry.py`.
+- Fixed `FileLock.acquire` to create the lock file's parent dir first.
+- README: documented per-project data dirs and concurrency safety.
+- `tests/`: +6 tests (`test_locking.py`) including a 5-thread × 20 concurrent
+  increment test that asserts no lost updates (final count == 100). 72 total.
+
+### Outcome
+- **Status:** success — all §11 open questions resolved.
+- Quality gates: pytest 72 passed, ruff clean, mypy --strict clean.
+
+### Lessons / notes
+- Locking must ensure the parent directory exists before creating the lock file
+  (the JSON stores may not have been written yet).
+
+### Project state
+- Loom Core is feature-complete against the Expanded Master Specification v2.0.
+  Spec §2–§10 implemented and tested; §11 open questions all resolved.
+
+### Next session
+- None outstanding. New work would be net-new features beyond the spec.
+
+---
+
 ## Session 2026-07-14-06 — Phase 4: Executable tools & enforcement
 
 - **Session ID:** 2026-07-14-06

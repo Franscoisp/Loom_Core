@@ -7,17 +7,13 @@ The single most important thing right now. This file overrides chat history.
 
 ## Focus
 
-**Phases 0–4 are complete.** Every binding spec section (§2–§10) is implemented
-and tested. Loom Core has: the full memory system, all loop roles, the
-Orchestrator (ownership + dispatch + audit log), context packing, the tool
-registry with **executable, gated tools**, value metrics, persistent ownership,
-and continuity enforcement.
+**Loom Core is feature-complete.** Every binding spec section (§2–§10) is
+implemented and tested, and all §11 open questions are now resolved
+(DEC-005, DEC-008..012). There is no outstanding work.
 
-There is no spec-required work outstanding. All remaining items are §11 open
-questions, explicitly deferred in DEC-007. Pick any up only on real demand:
-- Vector index / retrieval upgrade.
-- Automatic tool promotion policy.
-- Multi-project isolation; desktop app IA; multi-writer locking.
+If new work arrives it would be net-new feature requests beyond the current
+spec (e.g., a GUI, embeddings-based retrieval, distributed coordination) — each
+should get its own DECISIONS.md entry first.
 
 ## Full module map
 
@@ -27,7 +23,7 @@ questions, explicitly deferred in DEC-007. Pick any up only on real demand:
 - `orchestrator` (ownership + dispatch + metrics + audit log), `context`
   (ranked packing + `ContextProvider`), `registry` (§5.4),
   `tooling` (executable tools §4.4.6), `ownership` (persistent, §7),
-  `metrics` (§8), `continuity` (§7).
+  `metrics` (§8), `continuity` (§7), `locking` (advisory FileLock, DEC-012).
 - CLI: `memory ...`, `pack`, `distill`, `support`, `meta detect|run`,
   `tools list|run|promote`, `metrics`, `doctor [--fix]`, `session-start`,
   `version`.

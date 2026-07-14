@@ -107,12 +107,60 @@ Template:
 - **Consequences:** Safe-by-default tool execution. The deferred items remain
   open questions in §11; no code assumes them.
 
+## DEC-008: Retrieval stays keyword-based for now
+- **Date:** 2026-07-14
+- **Status:** accepted (resolves §11 "vector index")
+- **Context:** §11 asks whether to add a vector index.
+- **Decision:** Keep the deterministic keyword ranking in `ContextPacker` /
+  `MemoryStore.search`. No embeddings/vector dependency yet.
+- **Consequences:** Zero extra deps, fully local and testable. Revisit if recall
+  degrades at larger scale; the packer's scoring is already pluggable.
+
+## DEC-009: Tool promotion is manual / evidence-gated (no auto-promotion)
+- **Date:** 2026-07-14
+- **Status:** accepted (resolves §11 "auto-promotion aggressiveness")
+- **Context:** §11 asks how aggressive automatic tool promotion should be.
+- **Decision:** No unattended promotion. Tools are promoted only by an explicit
+  human action (`loom tools promote`) or a Meta evaluation that supplies
+  evidence + expected improvement + success metric (§4.4.4). Confirms DEC-007.
+- **Consequences:** Powerful/dangerous capability stays behind an explicit gate.
+
+## DEC-010: One data directory per project
+- **Date:** 2026-07-14
+- **Status:** accepted (resolves §11 "multi-project isolation")
+- **Context:** §11 asks for a multi-project isolation strategy.
+- **Decision:** Isolation is achieved by pointing Loom at a separate data dir per
+  project via `LOOM_DATA_DIR` or `--data-dir`. No shared-store namespacing.
+- **Consequences:** Simple, strong isolation with no cross-project leakage. A
+  shared multi-tenant store can be layered later if needed.
+
+## DEC-011: CLI + files are the interface; desktop GUI deferred
+- **Date:** 2026-07-14
+- **Status:** accepted (resolves §11 "desktop app IA")
+- **Context:** §11 lists desktop app information architecture as open.
+- **Decision:** The CLI and human-readable files are the interface. No GUI is
+  built now; revisit only if a desktop app is actually pursued.
+- **Consequences:** Focus stays on the memory-centric core.
+
+## DEC-012: Advisory file locking for concurrent writers
+- **Date:** 2026-07-14
+- **Status:** accepted (resolves §11 "multi-writer coordination")
+- **Context:** JSON state files (ownership, metrics, tool registry) are
+  read-modify-written and could lose updates across processes.
+- **Decision:** Add a dependency-free, cross-platform `FileLock` (atomic
+  `O_CREAT|O_EXCL` lock file, polling, stale-lock breaking) and wrap the
+  read-modify-write critical sections in `ownership`, `metrics`, and `registry`.
+- **Consequences:** Concurrent single-node processes no longer clobber each
+  other. Not a distributed lock; true multi-node coordination (DB/queue) remains
+  out of scope.
+
 ---
 
-## Open Questions (from spec §11 — unresolved)
+## Resolved (formerly Open Questions from spec §11)
 
-- Exact ranking algorithm weights for context packing (initial values in DEC-005)
-- Whether to introduce a vector index in Phase 2 or 3 (deferred — DEC-007)
-- How aggressive automatic tool promotion should be (deferred — DEC-007)
-- Multi-project isolation strategy (deferred — DEC-007)
-- Desktop app information architecture (deferred — DEC-007)
+- Ranking weights for context packing — DEC-005 (initial, tunable)
+- Vector index — DEC-008 (keep keyword)
+- Automatic tool promotion aggressiveness — DEC-009 (manual/evidence-gated)
+- Multi-project isolation — DEC-010 (one data dir per project)
+- Desktop app information architecture — DEC-011 (deferred; CLI is the interface)
+- Multi-writer coordination — DEC-012 (advisory file locking)

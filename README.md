@@ -43,3 +43,19 @@ pytest
 ruff check .
 mypy
 ```
+
+## Multiple projects
+
+Isolation is one **data directory per project** (DEC-010). Point Loom at a
+project's memory with either an environment variable or a flag:
+
+```
+$env:LOOM_DATA_DIR = "C:\path\to\projectA\data"   # PowerShell
+loom memory list
+
+loom metrics --data-dir C:\path\to\projectB\data   # per-command override
+```
+
+Concurrent processes sharing one data dir are safe: writes to the JSON state
+files (ownership, metrics, tool registry) are guarded by an advisory file lock
+(DEC-012).

@@ -13,6 +13,7 @@ import os
 import tempfile
 from dataclasses import asdict, dataclass
 
+from loom_core.locking import FileLock
 from loom_core.models import BaseEntry, EntryType, Status
 from loom_core.store import MemoryStore
 
@@ -61,11 +62,12 @@ class MetricsStore:
             raise
 
     def increment(self, field: str, by: int = 1) -> MetricsCounters:
-        counters = self.load()
-        if not hasattr(counters, field):
+        if field not in MetricsCounters().__dict__:
             raise ValueError(f"unknown counter {field!r}")
-        setattr(counters, field, getattr(counters, field) + by)
-        self.save(counters)
+        with FileLock(self.path):
+            counters = self.load()
+            setattr(counters, field, getattr(counters, field) + by)
+            self.save(counters)
         return counters
 
 

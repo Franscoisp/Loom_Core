@@ -76,10 +76,20 @@ This file overrides chat history.
 
 ---
 
-## Backlog / Later Phases (all §11 open questions — deferred, see DEC-007)
+## Phase 5 – §11 Open Questions (resolved)
 
-- Vector index for retrieval (keyword search sufficient at current scale)
-- Automatic/unattended tool promotion policy
-- Multi-project isolation strategy
-- Desktop app information architecture
-- Multi-writer / multi-process coordination (locking)
+| ID       | Status | Description |
+|----------|--------|-------------|
+| TASK-050 | DONE   | DEC-008: retrieval stays keyword-based |
+| TASK-051 | DONE   | DEC-009: tool promotion manual/evidence-gated |
+| TASK-052 | DONE   | DEC-010: one data dir per project (README) |
+| TASK-053 | DONE   | DEC-011: CLI/files as interface; GUI deferred |
+| TASK-054 | DONE   | DEC-012: advisory FileLock wired into ownership/metrics/registry |
+
+---
+
+## Backlog / Later Phases
+
+_None outstanding._ Loom Core is feature-complete against the Expanded Master
+Specification v2.0 and all §11 open questions are resolved (see DECISIONS.md).
+Future work would be net-new feature requests beyond the current spec.
