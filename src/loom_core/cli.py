@@ -580,6 +580,15 @@ def doctor(
     raise typer.Exit(code=1)
 
 
+@app.command()
+def tui(data_dir: DataDirOpt = None) -> None:
+    """Launch the Loom Core Terminal UI (spec §11)."""
+    from loom_core.tui.app import LoomApp
+
+    app = LoomApp(data_dir=str(data_dir) if data_dir else None)
+    app.run()
+
+
 @app.command("session-start")
 def session_start(data_dir: DataDirOpt = None) -> None:
     """Begin a session: verify continuity and record recovery if memory exists."""

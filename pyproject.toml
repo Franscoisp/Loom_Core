@@ -26,6 +26,10 @@ dev = [
     "types-PyYAML>=6.0",
 ]
 
+tui = [
+    "textual>=0.80",
+]
+
 [project.scripts]
 loom = "loom_core.cli:app"
 
