@@ -1,0 +1,17 @@
+manifest_version: 1
+
+name: memory
+description: Knowledge graph memory system backed by MCP
+
+transport:
+  type: stdio
+  command: "npx"
+  args:
+    - "-y"
+    - "@modelcontextprotocol/server-memory"
+
+auth:
+  type: none
+
+post_install: |
+  Start a new Loom session to load the memory tools.

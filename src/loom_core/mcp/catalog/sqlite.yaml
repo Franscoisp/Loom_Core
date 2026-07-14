@@ -1,0 +1,20 @@
+manifest_version: 1
+
+name: sqlite
+description: Query SQLite databases via MCP
+
+transport:
+  type: stdio
+  command: "npx"
+  args:
+    - "-y"
+    - "@modelcontextprotocol/server-sqlite"
+    - "${DB_PATH:-./data.db}"
+
+auth:
+  type: none
+
+post_install: |
+  By default, the server opens ./data.db. To point at another database:
+    loom mcp configure sqlite --env DB_PATH=/path/to/mydb.sqlite
+  Start a new Loom session to load the tools.

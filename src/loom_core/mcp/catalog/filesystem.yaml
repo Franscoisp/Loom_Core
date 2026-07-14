@@ -1,0 +1,20 @@
+manifest_version: 1
+
+name: filesystem
+description: Read and write files on the local filesystem via MCP
+
+transport:
+  type: stdio
+  command: "npx"
+  args:
+    - "-y"
+    - "@modelcontextprotocol/server-filesystem"
+    - "${ALLOWED_DIR:-/tmp}"
+
+auth:
+  type: none
+
+post_install: |
+  By default, the filesystem server can access /tmp. To change the directory:
+    loom mcp configure filesystem --env ALLOWED_DIR=/home/user/projects
+  Start a new Loom session to load the tools.

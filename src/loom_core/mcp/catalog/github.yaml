@@ -1,0 +1,23 @@
+manifest_version: 1
+
+name: github
+description: Interact with GitHub repositories, issues, and PRs via MCP
+
+transport:
+  type: stdio
+  command: "npx"
+  args:
+    - "-y"
+    - "@modelcontextprotocol/server-github"
+
+auth:
+  type: api_key
+  env:
+    - name: GITHUB_PERSONAL_ACCESS_TOKEN
+      prompt: "GitHub personal access token"
+      required: true
+      secret: true
+
+post_install: |
+  Create a GitHub personal access token at https://github.com/settings/tokens
+  with repo and workflow scopes. Start a new Loom session to load the tools.

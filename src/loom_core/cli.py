@@ -19,12 +19,18 @@ from loom_core.loops.coding_support import CodingSupportLoop
 from loom_core.loops.distillation import DistillationLoop
 from loom_core.loops.meta import MetaLoop
 from loom_core.mcp.client import MCPClient, MCPConfig
-from loom_core.mcp.server_registry import MCPServerRecord, MCPServerRegistry
+from loom_core.mcp.installer import (
+    Catalog,
+    add_server,
+    install_catalog,
+    list_servers,
+    remove_server,
+)
 from loom_core.metrics import MetricsStore, compute_metrics
 from loom_core.models import parse_entry
 from loom_core.models_config import DEFAULT_PROVIDERS, ModelStore
 from loom_core.orchestrator import Orchestrator
-from loom_core.plugins.loader import PluginLoader
+from loom_core.plugins import install_plugin, list_plugins, remove_plugin
 from loom_core.projects import (
     CONTINUITY_FILES,
     ProjectRegistry,
@@ -544,53 +550,65 @@ def models_use(
     typer.echo(f"active provider: {name}  model={model}  ({status})")
 
 
-# --- MCP commands (§13) -----------------------------------------------------
+# --- MCP commands (§13) ---------------------------------------------------
+
+
+@mcp_app.command("install")
+def mcp_install(
+    name: Annotated[str, typer.Argument(help="Catalog entry name to install.")],
+) -> None:
+    """Install an MCP server from the catalog (one step, Hermes-style)."""
+    try:
+        cfg = install_catalog(name)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"installed {name!r} ({cfg.command} {' '.join(cfg.args)})")
+    manifest = Catalog().get(name)
+    if manifest and manifest.post_install:
+        typer.echo(f"\n{manifest.post_install}")
 
 
 @mcp_app.command("add")
 def mcp_add(
     name: Annotated[str, typer.Argument(help="Server name.")],
-    command: Annotated[str, typer.Option("--cmd", help="Command to run.")],
+    command: Annotated[str, typer.Option("--cmd", "-c", help="Command to run.")] = "",
     args: Annotated[
-        list[str], typer.Option("--arg", help="Arguments (repeatable).")
+        list[str], typer.Option("--arg", "-a", help="Arguments (repeatable).")
     ] = [],  # noqa: B006
-    env: Annotated[
-        list[str], typer.Option("--env", help="Env vars KEY=VAL (repeatable).")
-    ] = [],  # noqa: B006
-    description: Annotated[str | None, typer.Option(help="Human description.")] = None,
 ) -> None:
-    """Register an MCP server."""
-    env_dict = dict(e.split("=", 1) for e in env if "=" in e)
-    reg = MCPServerRegistry()
-    reg.add(
-        MCPServerRecord(
-            name=name,
-            command=command,
-            args=list(args),
-            env=env_dict,
-            description=description or "",
-        )
-    )
-    typer.echo(f"MCP server {name!r} registered (command: {command})")
+    """Add a custom MCP server (not from catalog)."""
+    try:
+        add_server(name, command, list(args))
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"added custom server {name!r}")
 
 
 @mcp_app.command("list")
 def mcp_list() -> None:
-    """List registered MCP servers."""
-    reg = MCPServerRegistry()
-    servers = reg.list()
-    if not servers:
-        typer.echo("(no MCP servers registered)")
-        return
-    for s in servers:
-        typer.echo(f"  {s.name}  cmd={s.command} {s.args!r}  {s.description}")
+    """List installed MCP servers + catalog entries."""
+    catalog = Catalog()
+    installed = {s.name for s in list_servers()}
+
+    if installed:
+        typer.echo("--- Installed ---")
+        for s in list_servers():
+            typer.echo(f"  {s.name}  {s.command} {' '.join(s.args)}")
+    else:
+        typer.echo("(no servers installed)")
+
+    typer.echo("\n--- Catalog ---")
+    for m in catalog.list():
+        mark = " [installed]" if m.name in installed else ""
+        typer.echo(f"  {m.name}{mark}  {m.description}")
 
 
 @mcp_app.command("remove")
 def mcp_remove(name: Annotated[str, typer.Argument(help="Server name.")]) -> None:
-    """Remove a registered MCP server."""
-    reg = MCPServerRegistry()
-    if reg.remove(name):
+    """Remove an installed MCP server."""
+    if remove_server(name):
         typer.echo(f"removed {name!r}")
     else:
         typer.echo(f"unknown server {name!r}", err=True)
@@ -601,27 +619,19 @@ def mcp_remove(name: Annotated[str, typer.Argument(help="Server name.")]) -> Non
 def mcp_tools(
     name: Annotated[str, typer.Argument(help="Server name.")],
 ) -> None:
-    """Discover and list tools from an MCP server."""
-    reg = MCPServerRegistry()
-    record = reg.get(name)
-    if record is None:
-        typer.echo(f"unknown server {name!r}", err=True)
+    """Discover and list tools from an installed MCP server."""
+    servers = list_servers()
+    match = next((s for s in servers if s.name == name), None)
+    if match is None:
+        typer.echo(f"server {name!r} is not installed", err=True)
         raise typer.Exit(code=1)
     client = MCPClient(
-        MCPConfig(
-            command=record.command,
-            args=record.args,
-            env=record.env,
-            server_name=record.name,
-        )
+        MCPConfig(command=match.command, args=match.args, env=match.env)
     )
     try:
         info = client.start()
         typer.echo(f"connected to {info.name} v{info.version}")
-        tools = client.discover_tools()
-        if not tools:
-            typer.echo("(no tools discovered)")
-        for t in tools:
+        for t in client.discover_tools():
             typer.echo(f"  {t.name}  {t.description}")
     except Exception as exc:
         typer.echo(f"error: {exc}", err=True)
@@ -633,37 +643,40 @@ def mcp_tools(
 # --- plugin commands (§13) --------------------------------------------------
 
 
-@plugin_app.command("load")
-def plugin_load(
-    path: Annotated[Path, typer.Argument(help="Path to plugin file/dir.")],
-    name: Annotated[str | None, typer.Option(help="Override plugin name.")] = None,
+@plugin_app.command("install")
+def plugin_install(
+    spec: Annotated[str, typer.Argument(help="owner/repo shorthand, or full Git URL.")],
 ) -> None:
-    """Load a plugin by path."""
-    loader = PluginLoader()
+    """Install a plugin from GitHub (one step, Hermes-style)."""
     try:
-        loaded = loader.load(path, name=name or None)
-    except FileNotFoundError as exc:
+        info = install_plugin(spec)
+    except FileExistsError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from exc
-    if loaded.error:
-        typer.echo(f"error loading plugin: {loaded.error}", err=True)
-        raise typer.Exit(code=1)
-    typer.echo(
-        f"loaded plugin {loaded.record.name!r} v{loaded.record.version} "
-        f"from {loaded.record.path}"
-    )
+    typer.echo(f"installed plugin {info.name!r} at {info.path}")
 
 
 @plugin_app.command("list")
 def plugin_list() -> None:
-    """List loaded plugins."""
-    loader = PluginLoader()
-    records = loader.registry.list()
-    if not records:
-        typer.echo("(no plugins recorded)")
+    """List installed plugins."""
+    plugins = list_plugins()
+    if not plugins:
+        typer.echo("(no plugins installed)")
         return
-    for r in records:
-        typer.echo(f"  {r.name}  v{r.version}  [{r.status}]  {r.description}")
+    for p in plugins:
+        typer.echo(f"  {p.name}  {p.path}")
+
+
+@plugin_app.command("remove")
+def plugin_remove(
+    name: Annotated[str, typer.Argument(help="Plugin name to remove.")],
+) -> None:
+    """Remove an installed plugin."""
+    if remove_plugin(name):
+        typer.echo(f"removed {name!r}")
+    else:
+        typer.echo(f"unknown plugin {name!r}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command("support")

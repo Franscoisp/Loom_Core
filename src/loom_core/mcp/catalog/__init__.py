@@ -1,0 +1,1 @@
+﻿# MCP catalog — see *.yaml files for server manifests.

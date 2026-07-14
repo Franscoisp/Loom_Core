@@ -1,0 +1,17 @@
+manifest_version: 1
+
+name: puppeteer
+description: Browser automation via Puppeteer (headless Chrome) over MCP
+
+transport:
+  type: stdio
+  command: "npx"
+  args:
+    - "-y"
+    - "@modelcontextprotocol/server-puppeteer"
+
+auth:
+  type: none
+
+post_install: |
+  Start a new Loom session to load the browser tools.
