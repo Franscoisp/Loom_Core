@@ -8,6 +8,7 @@ spec instead of React/Ink. Clean separation from core logic.
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlparse
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -211,15 +212,68 @@ class ChatView(Vertical):
                     "  /help      show this help\n"
                     "  /quit      exit the TUI\n"
                     "  /refresh   reload current view\n"
+                    "  /fetch URL fetch a web page (spec §12)\n"
+                    "  /distill-fetch URL  fetch + save to memory\n"
                 )
                 return
             if cmd == "refresh":
                 output.update(f"Refreshing... (command: {value})")
                 return
+            if cmd == "fetch" or cmd == "distill-fetch":
+                parts = value.split(maxsplit=1)
+                if len(parts) < 2:
+                    output.update("Usage: /fetch <URL>")
+                    return
+                url = parts[1].strip()
+                self._do_fetch(url, output, distill=(cmd == "distill-fetch"))
+                return
             output.update(f"Unknown command: {value!r}\nTry /help")
             return
 
         output.update(f"> {value}\n\nResult not available in TUI. Use CLI for this command.")
+
+    def _do_fetch(self, url: str, output: Static, *, distill: bool = False) -> None:
+        from loom_core.browser import WebBrowser
+
+        browser = WebBrowser()
+        try:
+            result = browser.fetch(url)
+        except PermissionError as exc:
+            output.update(f"Blocked: {exc}")
+            return
+        if result["error"]:
+            output.update(f"Error fetching {url}: {result['error']}")
+            return
+        text = str(result["text"])
+        preview = (
+            text[:2000] + ("\n\n... (truncated)" if len(text) > 2000 else "")
+        )
+        extra = ""
+        if distill:
+            app = self.app
+            if isinstance(app, LoomApp):
+                store = MemoryStore(app.current_data_dir)
+                from loom_core.models import parse_entry
+
+                entry_id = f"fetch-{urlparse(url).hostname or 'page'}"
+                entry = parse_entry(
+                    {
+                        "id": entry_id,
+                        "type": "core",
+                        "title": f"Fetched: {url}",
+                        "status": "active",
+                        "confidence": 0.7,
+                        "tags": ["fetched", "browser"],
+                        "source": "browser",
+                        "provenance": f"Fetched via WebBrowser tool from {url}.",
+                    }
+                )
+                store.write(entry, text[:10_000])
+                extra = f"\n\n> Distilled to memory: {entry_id}"
+        output.update(
+            f"## {url}  (status={result['status']}, {result['length']} chars)"
+            f"\n\n{preview}{extra}"
+        )
 
 
 class LoomApp(App):  # type: ignore[type-arg]

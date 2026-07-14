@@ -351,6 +351,33 @@ def tools_promote(
     typer.echo(f"promoted {tool_id!r}")
 
 
+@app.command("fetch")
+def web_fetch(
+    url: Annotated[str, typer.Argument(help="URL to fetch.")],
+    allow_untrusted: Annotated[
+        bool, typer.Option(help="Bypass domain allowlist.")
+    ] = False,
+    data_dir: DataDirOpt = None,
+) -> None:
+    """Fetch a web page and extract text (spec §12)."""
+    from loom_core.browser import WebBrowser
+
+    browser = WebBrowser()
+    try:
+        result = browser.fetch(url, allow_untrusted=allow_untrusted)
+    except PermissionError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"url:    {result['url']}")
+    typer.echo(f"status: {result['status']}")
+    typer.echo(f"ok:     {result['ok']}")
+    typer.echo(f"length: {result['length']}")
+    if result["error"]:
+        typer.echo(f"error:  {result['error']}", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"\n{result['text']}")
+
+
 # --- project commands (§6) --------------------------------------------------
 
 _STUB_HEADER = (

@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from loom_core.browser import WebBrowser
 from loom_core.models import parse_entry
 from loom_core.registry import ToolRecord, ToolRegistry
 from loom_core.store import MemoryStore
@@ -143,6 +144,18 @@ def _tool_memory_summary(store: MemoryStore) -> ToolCallable:
     return run
 
 
+def _tool_web_fetch() -> ToolCallable:
+    browser = WebBrowser()
+
+    def run(payload: dict[str, object]) -> dict[str, object]:
+        url = str(payload.get("url", ""))
+        allow_untrusted = bool(payload.get("allow_untrusted", False))
+        result = browser.fetch(url, allow_untrusted=allow_untrusted)
+        return dict(result)
+
+    return run
+
+
 def build_default_executor(store: MemoryStore) -> ToolExecutor:
     """A ToolExecutor pre-loaded with Loom's built-in tools."""
     ex = ToolExecutor(store)
@@ -155,5 +168,10 @@ def build_default_executor(store: MemoryStore) -> ToolExecutor:
         "memory-summary",
         _tool_memory_summary(store),
         description="Summarize memory entry counts by type.",
+    )
+    ex.register(
+        "web-fetch",
+        _tool_web_fetch(),
+        description="Fetch a web page and extract text (docs, research, version checks).",
     )
     return ex
